@@ -16,5 +16,13 @@
         "eqeqeq": ["error", "smart"],
         "curly": "error"
     },
+    "overrides": [
+        {
+            "files": ["media/*.js"],
+            "env": { "browser": true },
+            "parserOptions": { "sourceType": "script" },
+            "globals": { "acquireVsCodeApi": "readonly" }
+        }
+    ],
     "ignorePatterns": ["out", "*.vsix"]
 }

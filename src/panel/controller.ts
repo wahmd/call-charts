@@ -3,20 +3,9 @@ import { buildTree, CallNode, MAX_DEPTH, NodeBudget, prepareCallHierarchyItem } 
 import { categoriesPresent, CATEGORY_COLORS, CATEGORY_LABELS, GraphNode, toGraph } from '../callGraph/model';
 import { renderSvg, RootAnchor } from '../callGraph/svg';
 import { clearDetailsCache, computeNodeDetails, ParentRef } from '../details/compute';
+import { DetailsReplyMessage, WebviewToHostMessage } from '../protocol';
 import { openLocation } from '../util';
 import { flowPanelHtml } from './html';
-
-interface FlowPanelMessage {
-    type: 'open' | 'close' | 'details' | 'callers';
-    uri?: string;
-    line?: number;
-    character?: number;
-    nodeId?: string;
-    parentUri?: string;
-    parentLine?: number;
-    parentCharacter?: number;
-    shouldShow?: boolean;
-}
 
 interface ExpandContext {
     uriString: string;
@@ -28,6 +17,8 @@ export class FlowPanelController implements vscode.Disposable {
     private panel: vscode.WebviewPanel | undefined;
     private context: ExpandContext | undefined;
     private isShowingParents = false;
+
+    constructor(private readonly extensionUri: vscode.Uri) {}
 
     async expand(uriString: string, line: number, character: number): Promise<void> {
         this.context = { uriString, line, character };
@@ -77,27 +68,38 @@ export class FlowPanelController implements vscode.Disposable {
     }
 
     private show(functionName: string, svgMarkup: string, legend: string, anchor: RootAnchor): void {
-        const html = flowPanelHtml(svgMarkup, legend, anchor, this.isShowingParents);
-        if (this.panel) {
-            this.panel.title = `Flow: ${functionName}`;
-            this.panel.webview.html = html;
-            this.panel.reveal(vscode.ViewColumn.Active);
-            return;
+        if (!this.panel) {
+            this.panel = vscode.window.createWebviewPanel(
+                'callCharts.flow',
+                `Flow: ${functionName}`,
+                vscode.ViewColumn.Active,
+                {
+                    enableScripts: true,
+                    localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'media')],
+                }
+            );
+            this.panel.onDidDispose(() => {
+                this.panel = undefined;
+            });
+            this.panel.webview.onDidReceiveMessage((message: WebviewToHostMessage) => this.onMessage(message));
         }
-        this.panel = vscode.window.createWebviewPanel(
-            'callCharts.flow',
-            `Flow: ${functionName}`,
-            vscode.ViewColumn.Active,
-            { enableScripts: true }
-        );
-        this.panel.onDidDispose(() => {
-            this.panel = undefined;
+        const webview = this.panel.webview;
+        const mediaUri = (file: string): string =>
+            webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'media', file)).toString();
+        this.panel.title = `Flow: ${functionName}`;
+        webview.html = flowPanelHtml({
+            svgMarkup,
+            legend,
+            anchor,
+            hasParents: this.isShowingParents,
+            styleUri: mediaUri('styles.css'),
+            scriptUri: mediaUri('main.js'),
+            cspSource: webview.cspSource,
         });
-        this.panel.webview.onDidReceiveMessage((message: FlowPanelMessage) => this.onMessage(message));
-        this.panel.webview.html = html;
+        this.panel.reveal(vscode.ViewColumn.Active);
     }
 
-    private async onMessage(message: FlowPanelMessage): Promise<void> {
+    private async onMessage(message: WebviewToHostMessage): Promise<void> {
         if (message.type === 'close') {
             this.panel?.dispose();
             return;
@@ -125,7 +127,8 @@ export class FlowPanelController implements vscode.Disposable {
             const details = await computeNodeDetails(message.uri, message.line, message.character, parent).catch(
                 () => undefined
             );
-            await this.panel?.webview.postMessage({ type: 'details', nodeId: message.nodeId, details });
+            const reply: DetailsReplyMessage = { type: 'details', nodeId: message.nodeId, details };
+            await this.panel?.webview.postMessage(reply);
         }
     }
 }

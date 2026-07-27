@@ -4,7 +4,7 @@ import { FlowPanelController } from './panel/controller';
 import { openLocation } from './util';
 
 export function activate(context: vscode.ExtensionContext): void {
-    const flowPanel = new FlowPanelController();
+    const flowPanel = new FlowPanelController(context.extensionUri);
     context.subscriptions.push(
         flowPanel,
         vscode.commands.registerCommand('callCharts.goto', openLocation),
