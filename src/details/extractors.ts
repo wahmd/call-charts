@@ -7,8 +7,10 @@ export function extractSignature(document: vscode.TextDocument, item: vscode.Cal
     let text = '';
     for (let lineNo = item.range.start.line; lineNo <= maxLine; lineNo++) {
         const lineText = document.lineAt(lineNo).text;
-        // the body brace follows ')' or '=>'; a bare indexOf('{') would trip on destructured params
-        const bodyStart = /(\)|=>)\s*\{/.exec(lineText);
+        // the body brace follows ')' or '=>' — or, with a return-type annotation, the type
+        // itself at end of line (`): Promise<User> {`); a bare indexOf('{') would trip on
+        // destructured params
+        const bodyStart = /(\)|=>)\s*\{/.exec(lineText) ?? /([\w>\]])\s*\{\s*$/.exec(lineText);
         if (bodyStart) {
             text += ' ' + lineText.slice(0, bodyStart.index + bodyStart[1].length);
             break;

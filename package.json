@@ -61,7 +61,9 @@
     "scripts": {
         "compile": "tsc -p ./",
         "watch": "tsc -w -p ./",
-        "lint": "eslint src media --ext .ts,.js",
+        "lint": "eslint src media test --ext .ts,.js",
+        "test": "npm run compile && node --test \"test/unit/*.test.js\"",
+        "test:e2e": "npm run compile && node --test \"test/e2e/*.test.js\"",
         "format": "prettier --write \"src/**/*.ts\"",
         "format:check": "prettier --check \"src/**/*.ts\"",
         "package": "vsce package",
@@ -75,6 +77,7 @@
         "@typescript-eslint/parser": "^7.18.0",
         "@vscode/vsce": "^2.29.0",
         "eslint": "^8.57.0",
+        "playwright": "^1.45.0",
         "prettier": "^3.3.0",
         "typescript": "^5.4.0"
     }

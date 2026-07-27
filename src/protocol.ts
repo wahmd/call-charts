@@ -20,3 +20,10 @@ export interface DetailsReplyMessage {
     nodeId: string;
     details: NodeDetails | undefined;
 }
+
+// sent when a workspace file changes: cached card details may be stale
+export interface InvalidateMessage {
+    type: 'invalidate';
+}
+
+export type HostToWebviewMessage = DetailsReplyMessage | InvalidateMessage;

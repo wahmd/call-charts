@@ -38,11 +38,15 @@ extraction, and `git log -L`. No AI, no network.
 ```bash
 npm install
 npm run compile        # typecheck + build to out/
-npm run lint           # eslint
+npm run lint           # eslint (extension, webview script, tests)
 npm run format:check   # prettier
+npm test               # unit tests (layout, extractors, graph model)
+npm run test:e2e       # drives the expand view in headless Chromium
 npm run package        # build the .vsix
 npm run install:local  # install the .vsix into the editor on PATH
 ```
+
+The e2e suite needs a browser once: `npx playwright install chromium`.
 
 ## Limitations
 

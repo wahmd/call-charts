@@ -22,6 +22,12 @@
             "env": { "browser": true },
             "parserOptions": { "sourceType": "script" },
             "globals": { "acquireVsCodeApi": "readonly" }
+        },
+        {
+            "files": ["test/**/*.js"],
+            "env": { "node": true, "browser": true },
+            "parserOptions": { "sourceType": "script" },
+            "rules": { "@typescript-eslint/no-var-requires": "off" }
         }
     ],
     "ignorePatterns": ["out", "*.vsix"]
