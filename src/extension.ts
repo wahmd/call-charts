@@ -12,9 +12,9 @@ const expandedCallers = new Set<string>();
 
 export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
-        vscode.commands.registerCommand('hoverCallGraph.goto', openLocation),
-        vscode.commands.registerCommand('hoverCallGraph.callers', toggleCallers),
-        vscode.commands.registerCommand('hoverCallGraph.expand', expandGraph),
+        vscode.commands.registerCommand('callCharts.goto', openLocation),
+        vscode.commands.registerCommand('callCharts.callers', toggleCallers),
+        vscode.commands.registerCommand('callCharts.expand', expandGraph),
         vscode.languages.registerHoverProvider(LANGUAGES, { provideHover })
     );
 }
@@ -296,7 +296,11 @@ function extractSignature(document: vscode.TextDocument, item: vscode.CallHierar
         }
         text += ' ' + lineText;
     }
-    const collapsed = text.replace(/\s+/g, ' ').replace(/\s*=>\s*$/, '').replace(/\s*=\s*$/, '').trim();
+    const collapsed = text
+        .replace(/\s+/g, ' ')
+        .replace(/\s*=>\s*$/, '')
+        .replace(/\s*=\s*$/, '')
+        .trim();
     return collapsed.length > 220 ? `${collapsed.slice(0, 219)}…` : collapsed;
 }
 
@@ -313,18 +317,30 @@ function countParams(signature: string): number | undefined {
     let hasContent = false;
     for (let i = open; i < signature.length; i++) {
         const char = signature[i];
-        if (char === '(') parens++;
-        else if (char === ')') {
+        if (char === '(') {
+            parens++;
+        } else if (char === ')') {
             parens--;
-            if (parens === 0) break;
-        } else if (char === '<') angles++;
-        else if (char === '>') angles = Math.max(0, angles - 1);
-        else if (char === '{') braces++;
-        else if (char === '}') braces--;
-        else if (char === '[') brackets++;
-        else if (char === ']') brackets--;
-        else if (char === ',' && parens === 1 && !angles && !braces && !brackets) count++;
-        else if (!/\s/.test(char)) hasContent = true;
+            if (parens === 0) {
+                break;
+            }
+        } else if (char === '<') {
+            angles++;
+        } else if (char === '>') {
+            angles = Math.max(0, angles - 1);
+        } else if (char === '{') {
+            braces++;
+        } else if (char === '}') {
+            braces--;
+        } else if (char === '[') {
+            brackets++;
+        } else if (char === ']') {
+            brackets--;
+        } else if (char === ',' && parens === 1 && !angles && !braces && !brackets) {
+            count++;
+        } else if (!/\s/.test(char)) {
+            hasContent = true;
+        }
     }
     return hasContent ? count + 1 : 0;
 }
@@ -432,12 +448,9 @@ function showFlowPanel(
         flowPanel.reveal(vscode.ViewColumn.Active);
         return;
     }
-    flowPanel = vscode.window.createWebviewPanel(
-        'hoverCallGraph.flow',
-        `Flow: ${functionName}`,
-        vscode.ViewColumn.Active,
-        { enableScripts: true }
-    );
+    flowPanel = vscode.window.createWebviewPanel('callCharts.flow', `Flow: ${functionName}`, vscode.ViewColumn.Active, {
+        enableScripts: true,
+    });
     flowPanel.onDidDispose(() => {
         flowPanel = undefined;
     });
@@ -479,7 +492,7 @@ function flowPanelHtml(svgMarkup: string, legend: string, anchor: RootAnchor, ha
     const buttonLeft = Math.round(anchor.x + anchor.width / 2);
     const buttonTop = Math.round(anchor.yCenter + 15 + 9);
     const buttonLabel = hasParents ? '× hide parents' : '⟨ show parents';
-    const nonce = 'hoverCallGraphFlowPanel';
+    const nonce = 'callChartsFlowPanel';
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -953,7 +966,7 @@ async function provideHover(
     // clicking anywhere on it opens the interactive full-size view instead
     const image = `<img src="data:image/svg+xml,${encodeURIComponent(svg.markup)}" width="${displayWidth}" height="${displayHeight}">`;
     markdown.appendMarkdown(
-        `[${image}](command:hoverCallGraph.expand?${expandCommandArgs(document, position)} "Open the interactive graph — click nodes there to jump")\n\n`
+        `[${image}](command:callCharts.expand?${expandCommandArgs(document, position)} "Open the interactive graph — click nodes there to jump")\n\n`
     );
 
     const footnotes: string[] = [];
@@ -986,8 +999,8 @@ function headerLine(
         : `$(call-outgoing) **Flow of** \`${root.name}\``;
     const toggleLabel = isExpanded ? '$(chevron-left)&nbsp;hide callers' : '$(call-incoming)&nbsp;callers';
     const tooltip = isExpanded ? 'Hide who calls this' : 'Also trace where this function is called from';
-    const expandLink = `[$(screen-full)&nbsp;expand](command:hoverCallGraph.expand?${expandCommandArgs(document, position)} "Open the complete graph full-size (click nodes to jump, Esc to close)")`;
-    return `${title}&nbsp;&nbsp;&nbsp;[${toggleLabel}](command:hoverCallGraph.callers?${args} "${tooltip}")&nbsp;&nbsp;&nbsp;${expandLink}`;
+    const expandLink = `[$(screen-full)&nbsp;expand](command:callCharts.expand?${expandCommandArgs(document, position)} "Open the complete graph full-size (click nodes to jump, Esc to close)")`;
+    return `${title}&nbsp;&nbsp;&nbsp;[${toggleLabel}](command:callCharts.callers?${args} "${tooltip}")&nbsp;&nbsp;&nbsp;${expandLink}`;
 }
 
 function expandCommandArgs(document: vscode.TextDocument, position: vscode.Position): string {
@@ -1070,7 +1083,7 @@ function isExternal(item: vscode.CallHierarchyItem): boolean {
 
 function externalPackage(item: vscode.CallHierarchyItem): string {
     const packageMatch = item.uri.path.match(/node_modules\/(@[^/]+\/[^/]+|[^/]+)/);
-    const name = packageMatch?.[1] ?? (item.uri.path.split('/').pop() ?? '');
+    const name = packageMatch?.[1] ?? item.uri.path.split('/').pop() ?? '';
     if (name === 'typescript' || name.startsWith('lib.')) {
         return 'js';
     }
@@ -1138,10 +1151,18 @@ function toGraph(node: CallNode, parentUri: vscode.Uri, depth = 0): GraphNode {
 }
 
 function categorize(fileName: string): Category {
-    if (fileName.includes('.component.')) return 'component';
-    if (fileName.includes('.service.')) return 'service';
-    if (/database|repository|\.effects\.|\.reducer\.|\.store\.|schema|model/.test(fileName)) return 'data';
-    if (/util|helper|shared|common/.test(fileName)) return 'util';
+    if (fileName.includes('.component.')) {
+        return 'component';
+    }
+    if (fileName.includes('.service.')) {
+        return 'service';
+    }
+    if (/database|repository|\.effects\.|\.reducer\.|\.store\.|schema|model/.test(fileName)) {
+        return 'data';
+    }
+    if (/util|helper|shared|common/.test(fileName)) {
+        return 'util';
+    }
     return 'other';
 }
 
@@ -1224,7 +1245,7 @@ const CATEGORY_LABELS: Record<Category, string> = {
 // scale the vector chart down to fit the hover viewport; below minScale readability
 // loses to size, so we stop shrinking and let the hover scroll instead
 function fitToHover(width: number, height: number): { displayWidth: number; displayHeight: number } {
-    const config = vscode.workspace.getConfiguration('hoverCallGraph');
+    const config = vscode.workspace.getConfiguration('callCharts');
     const maxWidth = config.get<number>('maxWidth', 820);
     const maxHeight = config.get<number>('maxHeight', 380);
     const minScale = config.get<number>('minScale', 0.5);
@@ -1258,7 +1279,7 @@ function renderSvg(
     const isDark =
         vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark ||
         vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
-    const shouldAnimate = vscode.workspace.getConfiguration('hoverCallGraph').get<boolean>('animation', true);
+    const shouldAnimate = vscode.workspace.getConfiguration('callCharts').get<boolean>('animation', true);
 
     const calleeSide = layout(calleeRoot);
     const callerSide = layout(callerRoot);
