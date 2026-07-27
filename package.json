@@ -1,0 +1,57 @@
+{
+    "name": "hover-call-graph",
+    "displayName": "Hover Call Graph",
+    "description": "Shows the outgoing call tree of a function inside the hover tooltip",
+    "version": "0.5.0",
+    "publisher": "waleed",
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:typescript",
+        "onLanguage:typescriptreact",
+        "onLanguage:javascript",
+        "onLanguage:javascriptreact"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "configuration": {
+            "title": "Hover Call Graph",
+            "properties": {
+                "hoverCallGraph.maxWidth": {
+                    "type": "number",
+                    "default": 820,
+                    "description": "Maximum rendered chart width in px; larger charts are scaled down to fit."
+                },
+                "hoverCallGraph.maxHeight": {
+                    "type": "number",
+                    "default": 380,
+                    "description": "Maximum rendered chart height in px; larger charts are scaled down to fit."
+                },
+                "hoverCallGraph.minScale": {
+                    "type": "number",
+                    "default": 0.5,
+                    "description": "Lower bound on downscaling (0-1). Charts that would need to shrink further scroll instead."
+                },
+                "hoverCallGraph.animation": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Animate the chart: staggered reveal and flow packets along call edges."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "compile": "tsc -p ./",
+        "vscode:prepublish": "npm run compile"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.0",
+        "@types/vscode": "^1.85.0",
+        "typescript": "^5.4.0"
+    }
+}
