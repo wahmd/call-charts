@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- Marketplace listing icon.
+
 ## 0.6.0
 
 - Renamed the extension from Hover Call Graph to **Call Charts**. Command ids and settings moved from

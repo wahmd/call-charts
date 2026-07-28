@@ -2,9 +2,10 @@
     "name": "call-charts",
     "displayName": "Call Charts",
     "description": "Hover any function to see its call flow chart. Expand into an interactive, animated call graph with path tracing and per-function details.",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "publisher": "waleed",
     "license": "MIT",
+    "icon": "icon.png",
     "repository": {
         "type": "git",
         "url": "https://github.com/wahmd/call-charts.git"
