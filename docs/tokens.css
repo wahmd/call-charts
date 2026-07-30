@@ -1,0 +1,51 @@
+/* Hallmark · tokens — Call Charts landing page
+ * theme: custom (vibe: "midnight editor, flowing signal")
+ * axes: paper-band dark · display-style geometric-sans · accent-hue cool-purple
+ */
+:root {
+    /* color */
+    --color-paper: oklch(16% 0.015 275);
+    --color-paper-2: oklch(19.5% 0.018 275);
+    --color-paper-3: oklch(23.5% 0.02 275);
+    --color-ink: oklch(93% 0.01 275);
+    --color-ink-dim: oklch(71% 0.018 275);
+    --color-ink-faint: oklch(56% 0.018 275);
+    --color-line: oklch(31% 0.02 275);
+    --color-accent: oklch(70% 0.115 300);
+    --color-accent-deep: oklch(58% 0.13 300);
+    --color-accent-warm: oklch(76% 0.1 70);
+    --color-signal-blue: oklch(66% 0.11 255);
+    --color-signal-teal: oklch(74% 0.09 185);
+    --color-focus: oklch(78% 0.12 300);
+    --glass-bg: oklch(21% 0.02 275 / 0.62);
+    --glass-line: oklch(45% 0.03 285 / 0.35);
+
+    /* type */
+    --font-display: 'Sora', system-ui, sans-serif;
+    --font-body: 'Sora', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --text-display: clamp(2.5rem, 5.5vw + 0.9rem, 4.6rem);
+    --text-2xl: clamp(1.55rem, 2.2vw + 0.8rem, 2.2rem);
+    --text-lg: 1.17rem;
+    --text-md: 1rem;
+    --text-sm: 0.885rem;
+    --text-xs: 0.78rem;
+
+    /* space — 4pt scale */
+    --space-2xs: 0.25rem;
+    --space-xs: 0.5rem;
+    --space-sm: 0.75rem;
+    --space-md: 1.25rem;
+    --space-lg: 2rem;
+    --space-xl: 3.25rem;
+    --space-2xl: 5.25rem;
+    --space-3xl: 8rem;
+
+    /* shape + motion */
+    --radius-md: 10px;
+    --radius-lg: 18px;
+    --radius-pill: 999px;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-short: 160ms;
+    --dur-med: 300ms;
+}

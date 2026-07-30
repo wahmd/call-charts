@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Call Charts — see the flow behind every function</title>
+<meta name="description" content="A VS Code extension that draws live, animated call charts for any TypeScript or JavaScript function. Hover for the chart, expand to trace execution. Deterministic, local, no AI.">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+/* Hallmark · genre: atmospheric · macrostructure: Component Playground · theme: custom
+ * (vibe: "midnight editor, flowing signal" · paper oklch(16% 0.015 275) · accent oklch(70% 0.115 300) cool-purple
+ *  display Sora · body Sora · mono JetBrains Mono)
+ * nav: N5 floating pill · footer: Ft5 statement · enrichment: live product SVG (hand-built tier)
+ * user override: glass panels requested explicitly — purposeful depth on nav/card/install only
+ * Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 */
+
+* { box-sizing: border-box; margin: 0; }
+html, body { overflow-x: clip; }
+html { scroll-behavior: smooth; }
+body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--text-md);
+    line-height: 1.65;
+    background-image:
+        radial-gradient(38rem 30rem at 82% -6rem, oklch(38% 0.09 300 / 0.34), transparent 68%),
+        radial-gradient(30rem 24rem at -8% 34rem, oklch(42% 0.07 60 / 0.16), transparent 70%);
+    background-attachment: fixed;
+}
+::selection { background: var(--color-accent-deep); color: var(--color-ink); }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { max-width: 68rem; margin: 0 auto; padding: 0 var(--space-md); }
+
+/* ---- nav · N5 floating pill ---- */
+.nav {
+    position: fixed; top: var(--space-sm); left: 50%; transform: translateX(-50%);
+    z-index: 40;
+    display: flex; align-items: center; gap: var(--space-md);
+    padding: var(--space-xs) var(--space-md);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-line);
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+}
+.nav .mark { display: flex; align-items: center; gap: var(--space-xs); font-weight: 700; font-size: var(--text-sm); letter-spacing: -0.01em; }
+.nav .mark img { width: 20px; height: 20px; border-radius: 5px; }
+.nav a { color: var(--color-ink-dim); text-decoration: none; font-size: var(--text-sm); transition: color var(--dur-short) var(--ease-out); }
+.nav a:hover { color: var(--color-ink); }
+.nav .mark a { color: var(--color-ink); font-weight: 700; }
+
+/* ---- hero ---- */
+.hero { padding: calc(var(--space-3xl) + var(--space-lg)) 0 var(--space-xl); }
+.hero-copy { max-width: 36rem; }
+h1 {
+    font-family: var(--font-display);
+    font-size: var(--text-display);
+    font-weight: 700;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    overflow-wrap: anywhere; min-width: 0;
+}
+h1 .lit { color: var(--color-accent); }
+.hero-sub { margin-top: var(--space-md); color: var(--color-ink-dim); font-size: var(--text-lg); max-width: 34rem; }
+.cta-row { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-lg); }
+.btn {
+    display: inline-block; white-space: nowrap;
+    padding: 0.62rem 1.3rem;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-sm); font-weight: 600;
+    text-decoration: none;
+    transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), transform 100ms var(--ease-out);
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--color-accent-deep); color: var(--color-ink); }
+.btn-primary:hover { background: var(--color-accent); }
+.btn-ghost { border: 1px solid var(--color-line); color: var(--color-ink-dim); }
+.btn-ghost:hover { border-color: var(--color-ink-faint); color: var(--color-ink); }
+
+/* ---- charts ---- */
+.chart { border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: oklch(14.5% 0.014 275 / 0.6); overflow-x: auto; overscroll-behavior-x: contain; }
+.chart-inner { padding: var(--space-md); width: max-content; min-width: 100%; }
+.chart svg { display: block; }
+.hero .chart { margin-top: var(--space-2xl); }
+figure { margin: 0; min-width: 0; }
+figcaption { margin-top: var(--space-sm); color: var(--color-ink-faint); font-size: var(--text-sm); }
+figcaption code, p code, li code { font-family: var(--font-mono); font-size: 0.92em; color: var(--color-ink-dim); }
+
+/* ---- sections ---- */
+section { padding: var(--space-2xl) 0 0; }
+h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    max-width: 30rem;
+    text-wrap: balance;
+}
+.section-sub { margin-top: var(--space-sm); color: var(--color-ink-dim); max-width: 40rem; }
+
+/* ---- playground ---- */
+.playground-panel { margin-top: var(--space-lg); position: relative; }
+.hint-row { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-md); margin-top: var(--space-sm); color: var(--color-ink-faint); font-size: var(--text-xs); font-family: var(--font-mono); }
+.demo-status { min-height: 1.4em; margin-top: var(--space-xs); color: var(--color-accent); font-size: var(--text-sm); }
+#playground .fn-node { cursor: pointer; transition: filter 0.25s var(--ease-out); }
+#playground .fn-node rect { transition: stroke-width 0.15s var(--ease-out); }
+#playground .fn-node:hover rect { stroke-width: 3; }
+#playground path { transition: stroke 0.25s var(--ease-out), stroke-width 0.25s var(--ease-out), filter 0.25s var(--ease-out); }
+
+/* the details card — same anatomy as the in-editor one */
+.dcard {
+    position: absolute; width: 430px; max-width: calc(100vw - 24px); z-index: 30; display: none;
+    flex-direction: column; gap: var(--space-xs);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-line);
+    border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md);
+    font-size: var(--text-sm);
+    box-shadow: 0 12px 32px oklch(6% 0.01 275 / 0.5);
+}
+.dcard.open { display: flex; animation: cardIn 0.18s var(--ease-out); }
+@keyframes cardIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.dcard .head { display: flex; align-items: baseline; gap: var(--space-xs); }
+.dcard .name { font-weight: 600; }
+.dcard .loc { color: var(--color-ink-faint); font-size: var(--text-xs); margin-left: auto; flex: none; }
+.dcard .code {
+    font-family: var(--font-mono); font-size: var(--text-xs);
+    background: oklch(100% 0 0 / 0.05); border-radius: 6px; padding: var(--space-xs) var(--space-sm);
+    overflow-x: auto; white-space: pre;
+}
+.dcard .row { display: flex; gap: var(--space-xs); align-items: baseline; }
+.dcard .glyph { flex: none; width: 15px; text-align: center; font-weight: 700; }
+.dcard .rowlabel { flex: none; width: 68px; color: var(--color-ink-faint); font-size: 0.65rem; letter-spacing: 0.07em; text-transform: uppercase; }
+.dcard .entries { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1.6; overflow-x: auto; white-space: pre; }
+.dcard .chips { display: flex; gap: var(--space-xs); flex-wrap: wrap; }
+.dcard .chip { font-size: 0.72rem; color: var(--color-ink-faint); border: 1px solid var(--color-line); border-radius: var(--radius-pill); padding: 0 var(--space-xs); }
+
+/* ---- examples ---- */
+.examples { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--space-lg); margin-top: var(--space-lg); align-items: start; }
+.examples .tall { grid-column: 1 / -1; }
+@media (max-width: 760px) { .examples { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- card anatomy ---- */
+.anatomy { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--space-xl); margin-top: var(--space-lg); align-items: start; }
+@media (max-width: 760px) { .anatomy { grid-template-columns: minmax(0, 1fr); } }
+.anatomy .dcard { position: static; display: flex; width: auto; animation: none; }
+.rowkey { list-style: none; padding: 0; display: flex; flex-direction: column; gap: var(--space-sm); }
+.rowkey li { display: flex; gap: var(--space-sm); align-items: baseline; }
+.rowkey .glyph { flex: none; width: 18px; text-align: center; font-weight: 700; font-family: var(--font-mono); }
+.rowkey b { font-weight: 600; }
+.rowkey span.desc { color: var(--color-ink-dim); }
+
+/* ---- how it works ---- */
+.how { margin-top: var(--space-lg); max-width: 44rem; display: flex; flex-direction: column; gap: var(--space-md); }
+.how div { border-top: 1px solid var(--color-line); padding-top: var(--space-md); }
+.how b { font-weight: 600; display: block; margin-bottom: var(--space-2xs); }
+.how p { color: var(--color-ink-dim); font-size: var(--text-sm); max-width: 40rem; }
+
+/* ---- install ---- */
+.install-panel {
+    margin-top: var(--space-lg);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border: 1px solid var(--glass-line); border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    max-width: 40rem;
+}
+.cmd { display: flex; align-items: center; gap: var(--space-sm); background: oklch(12% 0.012 275 / 0.8); border: 1px solid var(--color-line); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); }
+.cmd code { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-ink); overflow-x: auto; white-space: nowrap; flex: 1; min-width: 0; }
+.copy-btn {
+    flex: none; font: inherit; font-size: var(--text-xs); font-weight: 600; white-space: nowrap;
+    color: var(--color-ink-dim); background: none; border: 1px solid var(--color-line); border-radius: var(--radius-pill);
+    padding: 0.2rem 0.7rem; cursor: pointer;
+    transition: color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out);
+}
+.copy-btn:hover { color: var(--color-ink); border-color: var(--color-ink-faint); }
+.copy-btn.done { color: var(--color-signal-teal); border-color: var(--color-signal-teal); }
+.install-alt { margin-top: var(--space-md); color: var(--color-ink-faint); font-size: var(--text-sm); }
+.install-alt a { color: var(--color-accent); }
+
+/* ---- footer · Ft5 statement ---- */
+footer { padding: var(--space-3xl) 0 var(--space-xl); }
+.statement {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: var(--text-2xl); letter-spacing: -0.02em; line-height: 1.2;
+    max-width: 34rem; text-wrap: balance;
+}
+.foot-row { display: flex; flex-wrap: wrap; gap: var(--space-xs) var(--space-md); margin-top: var(--space-lg); font-size: var(--text-sm); color: var(--color-ink-faint); }
+.foot-row a { color: var(--color-ink-dim); text-decoration: none; white-space: nowrap; }
+.foot-row a:hover { color: var(--color-ink); }
+
+@media (max-width: 560px) {
+    .nav { gap: var(--space-sm); }
+    .nav a.optional { display: none; }
+    .hero { padding-top: var(--space-3xl); }
+}
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    .chart svg circle { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Main">
+    <span class="mark"><img src="icon.png" alt=""><a href="#top">Call Charts</a></span>
+    <a href="#try">Try it</a>
+    <a class="optional" href="#examples">Examples</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/wahmd/call-charts">GitHub</a>
+</nav>
+
+<header class="hero wrap" id="top">
+    <div class="hero-copy">
+        <h1>See the <span class="lit">flow</span> behind every function.</h1>
+        <p class="hero-sub">Call Charts is a VS Code extension that draws a live call chart for the function under your cursor — hover for the picture, expand to trace execution from route to database. Powered by the TypeScript language server. No AI, no network, nothing leaves your machine.</p>
+        <div class="cta-row">
+            <a class="btn btn-primary" href="https://marketplace.visualstudio.com/items?itemName=waleed.call-charts">Install for VS Code</a>
+            <a class="btn btn-ghost" href="https://github.com/wahmd/call-charts">View source</a>
+        </div>
+    </div>
+    <figure class="chart" aria-label="An animated call chart of a note-signing flow, rendered by the extension">
+        <div class="chart-inner"><svg xmlns="http://www.w3.org/2000/svg" width="917" height="172" viewBox="0 0 917 172" font-family="-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs><style>.node{opacity:0;animation:nodeIn .28s ease-out forwards;}@keyframes nodeIn{from{opacity:0;transform:translateX(-9px);}to{opacity:1;transform:none;}}.edge{opacity:0;animation:edgeIn .3s ease-out forwards;}@keyframes edgeIn{to{opacity:1;}}</style><path d="M 135 96.5 C 158 96.5, 158 96.5, 181 96.5" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.12s"/><circle r="2.6" fill="#8a939e" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.0010;0.1923;1" path="M 135 96.5 C 158 96.5, 158 96.5, 181 96.5"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.0010;0.0110;0.1823;0.1923;1"/></circle><path d="M 300 96.5 C 323 96.5, 323 44, 346 44" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.1923;0.3846;1" path="M 300 96.5 C 323 96.5, 323 44, 346 44"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.1923;0.2023;0.3746;0.3846;1"/></circle><path d="M 300 96.5 C 323 96.5, 323 107, 346 107" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.1923;0.3846;1" path="M 300 96.5 C 323 96.5, 323 107, 346 107"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.1923;0.2023;0.3746;0.3846;1"/></circle><path d="M 300 96.5 C 323 96.5, 323 149, 346 149" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#8a939e" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.1923;0.3846;1" path="M 300 96.5 C 323 96.5, 323 149, 346 149"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.1923;0.2023;0.3746;0.3846;1"/></circle><path d="M 486 44 C 513.5 44, 513.5 23, 541 23" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.3846;0.5769;1" path="M 486 44 C 513.5 44, 513.5 23, 541 23"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.3846;0.3946;0.5669;0.5769;1"/></circle><path d="M 486 44 C 513.5 44, 513.5 65, 541 65" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s"/><circle r="2.6" fill="#d9a35a" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.3846;0.5769;1" path="M 486 44 C 513.5 44, 513.5 65, 541 65"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.3846;0.3946;0.5669;0.5769;1"/></circle><path d="M 670 23 C 707.5 23, 707.5 23, 745 23" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.48s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.5769;0.7692;1" path="M 670 23 C 707.5 23, 707.5 23, 745 23"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.5769;0.5869;0.7592;0.7692;1"/></circle><path d="M 495 107 C 518 107, 518 107, 541 107" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s"/><circle r="2.6" fill="#d9a35a" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.3846;0.5769;1" path="M 495 107 C 518 107, 518 107, 541 107"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.3846;0.3946;0.5669;0.5769;1"/></circle><path d="M 480 149 C 510.5 149, 510.5 149, 541 149" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="2.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.3846;0.5769;1" path="M 480 149 C 510.5 149, 510.5 149, 541 149"/><animate attributeName="opacity" dur="2.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.3846;0.3946;0.5669;0.5769;1"/></circle><g class="node" style="animation-delay:0.00s"><rect x="8" y="81.5" width="127" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="1.3"/><text x="18" y="94" font-size="12" font-weight="500" fill="#e6edf3">router.post</text><text x="18" y="106.5" font-size="9.5" fill="#8b949e">invoice.route.ts</text></g><g class="node" style="animation-delay:0.12s"><rect x="183" y="81.5" width="117" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="2.2"/><text x="193" y="100.5" font-size="12" font-weight="700" fill="#e6edf3">signInvoice</text></g><g class="node" style="animation-delay:0.24s"><rect x="348" y="29" width="138" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="358" y="41.5" font-size="12" font-weight="500" fill="#e6edf3">update</text><text x="358" y="54" font-size="9.5" fill="#8b949e">invoice.service.ts</text></g><g class="node" style="animation-delay:0.36s"><rect x="543" y="8" width="127" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="553" y="20.5" font-size="12" font-weight="500" fill="#e6edf3">calculateUnits</text><text x="553" y="33" font-size="9.5" fill="#8b949e">billing.service.ts</text></g><g class="node" style="animation-delay:0.48s"><rect x="747" y="8" width="162" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="757" y="27" font-size="12" font-weight="500" fill="#e6edf3">checkMinimumMinutes</text></g><g class="node" style="animation-delay:0.36s"><rect x="543" y="50" width="144" height="30" rx="7" fill="#d9a35a" fill-opacity="0.16" stroke="#d9a35a" stroke-width="1.3"/><text x="553" y="62.5" font-size="12" font-weight="500" fill="#e6edf3">updateNote</text><text x="553" y="75" font-size="9.5" fill="#8b949e">invoice-database.ts</text></g><g class="node" style="animation-delay:0.24s"><rect x="348" y="92" width="147" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="358" y="104.5" font-size="12" font-weight="500" fill="#e6edf3">updateVisitStatus</text><text x="358" y="117" font-size="9.5" fill="#8b949e">workload.service.ts</text></g><g class="node" style="animation-delay:0.36s"><rect x="543" y="92" width="138" height="30" rx="7" fill="#d9a35a" fill-opacity="0.16" stroke="#d9a35a" stroke-width="1.3"/><text x="553" y="104.5" font-size="12" font-weight="500" fill="#e6edf3">updateVisit</text><text x="553" y="117" font-size="9.5" fill="#8b949e">workload-database.ts</text></g><g class="node" style="animation-delay:0.24s"><rect x="348" y="134" width="132" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="1.3"/><text x="358" y="153" font-size="12" font-weight="500" fill="#e6edf3">handleConflicts</text></g><g class="node" style="animation-delay:0.36s"><rect x="543" y="134" width="156" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="553" y="146.5" font-size="12" font-weight="500" fill="#e6edf3">notifyOwner</text><text x="553" y="159" font-size="9.5" fill="#8b949e">notification.service.ts</text></g></svg></div>
+    </figure>
+    <figcaption class="wrap" style="padding:0">This chart is real extension output — the same renderer and the same wave animation you get in the editor.</figcaption>
+</header>
+
+<main>
+<section class="wrap" id="try">
+    <h2>Try it right here.</h2>
+    <p class="section-sub">Below is the interactive expand view, running the extension's actual trace code. Hover any node: packets flow from the outermost callers, through <code>placeOrder</code>, to the node under your cursor — and after a beat, the details card opens.</p>
+    <div class="playground-panel">
+        <figure class="chart" id="playground" aria-label="Interactive call chart — hover a node to trace its execution path">
+            <div class="chart-inner"><svg xmlns="http://www.w3.org/2000/svg" width="1009" height="228" viewBox="0 0 1009 228" font-family="-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker><marker id="arrow-component" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#4d8edb"/></marker><marker id="arrow-service" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#9d7cd8"/></marker><marker id="arrow-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#d9a35a"/></marker><marker id="arrow-util" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#5fb8a5"/></marker><marker id="arrow-other" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#8a939e"/></marker></defs><style>.node{opacity:0;animation:nodeIn .28s ease-out forwards;}@keyframes nodeIn{from{opacity:0;transform:translateX(-9px);}to{opacity:1;transform:none;}}.edge{opacity:0;animation:edgeIn .3s ease-out forwards;}@keyframes edgeIn{to{opacity:1;}}</style><path d="M 305 103.5 C 328 103.5, 328 124.5, 351 124.5" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s" data-from="n0" data-to="c1" data-end="n0" data-cat="other" data-color="#8a939e"/><path d="M 305 145.5 C 328 145.5, 328 124.5, 351 124.5" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s" data-from="n0" data-to="c3" data-end="n0" data-cat="other" data-color="#8a939e"/><path d="M 110 103.5 C 143 103.5, 143 103.5, 176 103.5" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.12s" data-from="c1" data-to="c2" data-end="c1" data-cat="other" data-color="#8a939e"/><path d="M 448 124.5 C 471 124.5, 471 72, 494 72" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s" data-from="n0" data-to="n1" data-end="n1" data-cat="service" data-color="#9d7cd8"/><path d="M 448 124.5 C 471 124.5, 471 135, 494 135" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s" data-from="n0" data-to="n5" data-end="n5" data-cat="service" data-color="#9d7cd8"/><path d="M 448 124.5 C 471 124.5, 471 177, 494 177" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s" data-from="n0" data-to="n7" data-end="n7" data-cat="service" data-color="#9d7cd8"/><path d="M 611 72 C 640 72, 640 51, 669 51" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.48s" data-from="n1" data-to="n2" data-end="n2" data-cat="service" data-color="#9d7cd8"/><path d="M 611 72 C 640 72, 640 93, 669 93" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.48s" data-from="n1" data-to="n4" data-end="n4" data-cat="data" data-color="#d9a35a"/><path d="M 809 51 C 832 51, 832 51, 855 51" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.60s" data-from="n2" data-to="n3" data-end="n3" data-cat="data" data-color="#d9a35a"/><path d="M 623 135 C 646 135, 646 135, 669 135" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.48s" data-from="n5" data-to="n6" data-end="n6" data-cat="data" data-color="#d9a35a"/><g class="node fn-node" style="animation-delay:0.12s" data-uri="file:///repo/src/cart.controller.ts" data-line="10" data-character="4" data-node-id="c1" data-parent-id="n0" data-side="caller"><rect x="178" y="88.5" width="127" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="1.3"/><text x="188" y="101" font-size="12" font-weight="500" fill="#e6edf3">checkout</text><text x="188" y="113.5" font-size="9.5" fill="#8b949e">cart.controller.ts</text></g><g class="node fn-node" style="animation-delay:0.00s" data-uri="file:///repo/src/shop.route.ts" data-line="10" data-character="4" data-node-id="c2" data-parent-id="c1" data-side="caller"><rect x="8" y="88.5" width="102" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="1.3"/><text x="18" y="101" font-size="12" font-weight="500" fill="#e6edf3">router.post</text><text x="18" y="113.5" font-size="9.5" fill="#8b949e">shop.route.ts</text></g><g class="node fn-node" style="animation-delay:0.12s" data-uri="file:///repo/src/order.cron.ts" data-line="10" data-character="4" data-node-id="c3" data-parent-id="n0" data-side="caller"><rect x="158" y="130.5" width="147" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="1.3"/><text x="168" y="143" font-size="12" font-weight="500" fill="#e6edf3">retryFailedOrders</text><text x="168" y="155.5" font-size="9.5" fill="#8b949e">order.cron.ts</text></g><g class="node fn-node" style="animation-delay:0.24s" data-uri="file:///repo/src/order.controller.ts" data-line="10" data-character="4" data-node-id="n0" data-side="callee"><rect x="353" y="109.5" width="95" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="2.2"/><text x="363" y="128.5" font-size="12" font-weight="700" fill="#e6edf3">placeOrder</text></g><g class="node fn-node" style="animation-delay:0.36s" data-uri="file:///repo/src/order.service.ts" data-line="10" data-character="4" data-node-id="n1" data-parent-id="n0" data-side="callee"><rect x="496" y="57" width="115" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="506" y="69.5" font-size="12" font-weight="500" fill="#e6edf3">createOrder</text><text x="506" y="82" font-size="9.5" fill="#8b949e">order.service.ts</text></g><g class="node fn-node" style="animation-delay:0.48s" data-uri="file:///repo/src/inventory.service.ts" data-line="10" data-character="4" data-node-id="n2" data-parent-id="n1" data-side="callee"><rect x="671" y="36" width="138" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="681" y="48.5" font-size="12" font-weight="500" fill="#e6edf3">reserveStock</text><text x="681" y="61" font-size="9.5" fill="#8b949e">inventory.service.ts</text></g><g class="node fn-node" style="animation-delay:0.60s" data-uri="file:///repo/src/inventory-database.ts" data-line="10" data-character="4" data-node-id="n3" data-parent-id="n2" data-side="callee"><rect x="857" y="36" width="144" height="30" rx="7" fill="#d9a35a" fill-opacity="0.16" stroke="#d9a35a" stroke-width="1.3"/><text x="867" y="48.5" font-size="12" font-weight="500" fill="#e6edf3">decrement</text><text x="867" y="61" font-size="9.5" fill="#8b949e">inventory-database.ts</text></g><g class="node fn-node" style="animation-delay:0.48s" data-uri="file:///repo/src/order-database.ts" data-line="10" data-character="4" data-node-id="n4" data-parent-id="n1" data-side="callee"><rect x="671" y="78" width="121" height="30" rx="7" fill="#d9a35a" fill-opacity="0.16" stroke="#d9a35a" stroke-width="1.3"/><text x="681" y="90.5" font-size="12" font-weight="500" fill="#e6edf3">insertOrder</text><text x="681" y="103" font-size="9.5" fill="#8b949e">order-database.ts</text></g><g class="node fn-node" style="animation-delay:0.36s" data-uri="file:///repo/src/payment.service.ts" data-line="10" data-character="4" data-node-id="n5" data-parent-id="n0" data-side="callee"><rect x="496" y="120" width="127" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="506" y="132.5" font-size="12" font-weight="500" fill="#e6edf3">chargeCustomer</text><text x="506" y="145" font-size="9.5" fill="#8b949e">payment.service.ts</text></g><g class="node fn-node" style="animation-delay:0.48s" data-uri="file:///repo/src/payment-database.ts" data-line="10" data-character="4" data-node-id="n6" data-parent-id="n5" data-side="callee"><rect x="671" y="120" width="132" height="30" rx="7" fill="#d9a35a" fill-opacity="0.16" stroke="#d9a35a" stroke-width="1.3"/><text x="681" y="132.5" font-size="12" font-weight="500" fill="#e6edf3">createCharge</text><text x="681" y="145" font-size="9.5" fill="#8b949e">payment-database.ts</text></g><g class="node fn-node" style="animation-delay:0.36s" data-uri="file:///repo/src/email.service.ts" data-line="10" data-character="4" data-node-id="n7" data-parent-id="n0" data-side="callee"><rect x="496" y="162" width="115" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="506" y="174.5" font-size="12" font-weight="500" fill="#e6edf3">sendReceipt</text><text x="506" y="187" font-size="9.5" fill="#8b949e">email.service.ts</text></g><text x="400.5" y="90.5" font-size="9" fill="#8b949e" text-anchor="middle" letter-spacing="0.5">you are here</text><polygon points="394.5,94.5 406.5,94.5 400.5,104.5" fill="#8a939e"/></svg></div>
+        </figure>
+        <div class="hint-row"><span>hover a node — trace its path</span><span>stay 250 ms — details card</span><span>click — jumps to code (in the editor)</span></div>
+        <p class="demo-status" id="demo-status" role="status" aria-live="polite"></p>
+    </div>
+</section>
+
+<section class="wrap" id="examples">
+    <h2>More flows, same renderer.</h2>
+    <p class="section-sub">Every chart on this page was generated by the extension from a call-hierarchy tree — nodes are colored by layer: <span style="color:var(--color-signal-blue)">components</span>, <span style="color:var(--color-accent)">services</span>, <span style="color:var(--color-accent-warm)">data</span>, <span style="color:var(--color-signal-teal)">utils</span>.</p>
+    <div class="examples">
+        <figure>
+            <div class="chart"><div class="chart-inner"><svg xmlns="http://www.w3.org/2000/svg" width="686" height="88" viewBox="0 0 686 88" font-family="-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs><style>.node{opacity:0;animation:nodeIn .28s ease-out forwards;}@keyframes nodeIn{from{opacity:0;transform:translateX(-9px);}to{opacity:1;transform:none;}}.edge{opacity:0;animation:edgeIn .3s ease-out forwards;}@keyframes edgeIn{to{opacity:1;}}</style><path d="M 135 44 C 158 44, 158 44, 181 44" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.12s"/><circle r="2.6" fill="#8a939e" opacity="0"><animateMotion dur="2.10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.0010;0.2381;1" path="M 135 44 C 158 44, 158 44, 181 44"/><animate attributeName="opacity" dur="2.10s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.0010;0.0110;0.2281;0.2381;1"/></circle><path d="M 300 44 C 323 44, 323 23, 346 23" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="2.10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.2381;0.4762;1" path="M 300 44 C 323 44, 323 23, 346 23"/><animate attributeName="opacity" dur="2.10s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.2381;0.2481;0.4662;0.4762;1"/></circle><path d="M 300 44 C 323 44, 323 65, 346 65" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#5fb8a5" opacity="0"><animateMotion dur="2.10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.2381;0.4762;1" path="M 300 44 C 323 44, 323 65, 346 65"/><animate attributeName="opacity" dur="2.10s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.2381;0.2481;0.4662;0.4762;1"/></circle><path d="M 486 23 C 509 23, 509 23, 532 23" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s"/><circle r="2.6" fill="#d9a35a" opacity="0"><animateMotion dur="2.10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.4762;0.7143;1" path="M 486 23 C 509 23, 509 23, 532 23"/><animate attributeName="opacity" dur="2.10s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.4762;0.4862;0.7043;0.7143;1"/></circle><g class="node" style="animation-delay:0.00s"><rect x="8" y="29" width="127" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="1.3"/><text x="18" y="41.5" font-size="12" font-weight="500" fill="#e6edf3">router.get</text><text x="18" y="54" font-size="9.5" fill="#8b949e">invoice.route.ts</text></g><g class="node" style="animation-delay:0.12s"><rect x="183" y="29" width="117" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="2.2"/><text x="193" y="48" font-size="12" font-weight="700" fill="#e6edf3">getSignedNote</text></g><g class="node" style="animation-delay:0.24s"><rect x="348" y="8" width="138" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="358" y="20.5" font-size="12" font-weight="500" fill="#e6edf3">getSignedNote</text><text x="358" y="33" font-size="9.5" fill="#8b949e">invoice.service.ts</text></g><g class="node" style="animation-delay:0.36s"><rect x="534" y="8" width="144" height="30" rx="7" fill="#d9a35a" fill-opacity="0.16" stroke="#d9a35a" stroke-width="1.3"/><text x="544" y="20.5" font-size="12" font-weight="500" fill="#e6edf3">findSigned</text><text x="544" y="33" font-size="9.5" fill="#8b949e">invoice-database.ts</text></g><g class="node" style="animation-delay:0.24s"><rect x="348" y="50" width="127" height="30" rx="7" fill="#5fb8a5" fill-opacity="0.16" stroke="#5fb8a5" stroke-width="1.3"/><text x="358" y="62.5" font-size="12" font-weight="500" fill="#e6edf3">buildResponse</text><text x="358" y="75" font-size="9.5" fill="#8b949e">response.helper.ts</text></g></svg></div></div>
+            <figcaption>An Express handler — route → controller → service → database, callers on the left.</figcaption>
+        </figure>
+        <figure>
+            <div class="chart"><div class="chart-inner"><svg xmlns="http://www.w3.org/2000/svg" width="488" height="130" viewBox="0 0 488 130" font-family="-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs><style>.node{opacity:0;animation:nodeIn .28s ease-out forwards;}@keyframes nodeIn{from{opacity:0;transform:translateX(-9px);}to{opacity:1;transform:none;}}.edge{opacity:0;animation:edgeIn .3s ease-out forwards;}@keyframes edgeIn{to{opacity:1;}}</style><path d="M 125 75.5 C 148 75.5, 148 44, 171 44" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.12s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="1.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.0010;0.3125;1" path="M 125 75.5 C 148 75.5, 148 44, 171 44"/><animate attributeName="opacity" dur="1.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.0010;0.0110;0.3025;0.3125;1"/></circle><path d="M 125 75.5 C 148 75.5, 148 107, 171 107" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.12s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="1.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.0010;0.3125;1" path="M 125 75.5 C 148 75.5, 148 107, 171 107"/><animate attributeName="opacity" dur="1.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.0010;0.0110;0.3025;0.3125;1"/></circle><path d="M 300 44 C 323 44, 323 23, 346 23" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#d9a35a" opacity="0"><animateMotion dur="1.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.3125;0.6250;1" path="M 300 44 C 323 44, 323 23, 346 23"/><animate attributeName="opacity" dur="1.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.3125;0.3225;0.6150;0.6250;1"/></circle><path d="M 300 44 C 323 44, 323 65, 346 65" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#5fb8a5" opacity="0"><animateMotion dur="1.60s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.3125;0.6250;1" path="M 300 44 C 323 44, 323 65, 346 65"/><animate attributeName="opacity" dur="1.60s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.3125;0.3225;0.6150;0.6250;1"/></circle><g class="node" style="animation-delay:0.00s"><rect x="8" y="60.5" width="117" height="30" rx="7" fill="#4d8edb" fill-opacity="0.16" stroke="#4d8edb" stroke-width="2.2"/><text x="18" y="79.5" font-size="12" font-weight="700" fill="#e6edf3">onSaveCustomer</text></g><g class="node" style="animation-delay:0.12s"><rect x="173" y="29" width="127" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="183" y="41.5" font-size="12" font-weight="500" fill="#e6edf3">updateCustomer</text><text x="183" y="54" font-size="9.5" fill="#8b949e">customer.service.ts</text></g><g class="node" style="animation-delay:0.24s"><rect x="348" y="8" width="132" height="30" rx="7" fill="#d9a35a" fill-opacity="0.16" stroke="#d9a35a" stroke-width="1.3"/><text x="358" y="20.5" font-size="12" font-weight="500" fill="#e6edf3">setCustomerState</text><text x="358" y="33" font-size="9.5" fill="#8b949e">customer.store.ts</text></g><g class="node" style="animation-delay:0.24s"><rect x="348" y="50" width="97" height="30" rx="7" fill="#5fb8a5" fill-opacity="0.16" stroke="#5fb8a5" stroke-width="1.3"/><text x="358" y="62.5" font-size="12" font-weight="500" fill="#e6edf3">put</text><text x="358" y="75" font-size="9.5" fill="#8b949e">api.helper.ts</text></g><g class="node" style="animation-delay:0.12s"><rect x="173" y="92" width="115" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="183" y="104.5" font-size="12" font-weight="500" fill="#e6edf3">showToast</text><text x="183" y="117" font-size="9.5" fill="#8b949e">toast.service.ts</text></g></svg></div></div>
+            <figcaption>An Angular save handler fanning out through a service into the store.</figcaption>
+        </figure>
+        <figure class="tall">
+            <div class="chart"><div class="chart-inner"><svg xmlns="http://www.w3.org/2000/svg" width="626" height="88" viewBox="0 0 626 88" font-family="-apple-system,'Segoe UI',Helvetica,Arial,sans-serif"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="#6e7681"/></marker></defs><style>.node{opacity:0;animation:nodeIn .28s ease-out forwards;}@keyframes nodeIn{from{opacity:0;transform:translateX(-9px);}to{opacity:1;transform:none;}}.edge{opacity:0;animation:edgeIn .3s ease-out forwards;}@keyframes edgeIn{to{opacity:1;}}</style><path d="M 118 44 C 141 44, 141 44, 164 44" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.12s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="2.10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.0010;0.2381;1" path="M 118 44 C 141 44, 141 44, 164 44"/><animate attributeName="opacity" dur="2.10s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.0010;0.0110;0.2281;0.2381;1"/></circle><path d="M 287 44 C 310 44, 310 23, 333 23" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#9d7cd8" opacity="0"><animateMotion dur="2.10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.2381;0.4762;1" path="M 287 44 C 310 44, 310 23, 333 23"/><animate attributeName="opacity" dur="2.10s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.2381;0.2481;0.4662;0.4762;1"/></circle><path d="M 287 44 C 310 44, 310 65, 333 65" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.24s"/><circle r="2.6" fill="#5fb8a5" opacity="0"><animateMotion dur="2.10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.2381;0.4762;1" path="M 287 44 C 310 44, 310 65, 333 65"/><animate attributeName="opacity" dur="2.10s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.2381;0.2481;0.4662;0.4762;1"/></circle><path d="M 467 23 C 490 23, 490 23, 513 23" fill="none" stroke="#6e7681" stroke-width="1.4" marker-end="url(#arrow)" class="edge" style="animation-delay:0.36s"/><circle r="2.6" fill="#5fb8a5" opacity="0"><animateMotion dur="2.10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.4762;0.7143;1" path="M 467 23 C 490 23, 490 23, 513 23"/><animate attributeName="opacity" dur="2.10s" repeatCount="indefinite" values="0;0;0.9;0.9;0;0" keyTimes="0;0.4762;0.4862;0.7043;0.7143;1"/></circle><g class="node" style="animation-delay:0.00s"><rect x="8" y="29" width="110" height="30" rx="7" fill="#8a939e" fill-opacity="0.16" stroke="#8a939e" stroke-width="2.2"/><text x="18" y="48" font-size="12" font-weight="700" fill="#e6edf3">exportReport</text></g><g class="node" style="animation-delay:0.12s"><rect x="166" y="29" width="121" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="176" y="41.5" font-size="12" font-weight="500" fill="#e6edf3">buildReport</text><text x="176" y="54" font-size="9.5" fill="#8b949e">report.service.ts</text></g><g class="node" style="animation-delay:0.24s"><rect x="335" y="8" width="132" height="30" rx="7" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.3"/><text x="345" y="27" font-size="12" font-weight="500" fill="#e6edf3">aggregateVisits</text></g><g class="node" style="animation-delay:0.36s"><rect x="515" y="8" width="103" height="30" rx="7" fill="#5fb8a5" fill-opacity="0.16" stroke="#5fb8a5" stroke-width="1.3"/><text x="525" y="20.5" font-size="12" font-weight="500" fill="#e6edf3">groupByWeek</text><text x="525" y="33" font-size="9.5" fill="#8b949e">date.helper.ts</text></g><g class="node" style="animation-delay:0.24s"><rect x="335" y="50" width="97" height="30" rx="7" fill="#5fb8a5" fill-opacity="0.16" stroke="#5fb8a5" stroke-width="1.3"/><text x="345" y="62.5" font-size="12" font-weight="500" fill="#e6edf3">renderPdf</text><text x="345" y="75" font-size="9.5" fill="#8b949e">pdf.helper.ts</text></g></svg></div></div>
+            <figcaption>A report exporter — the chart follows chains three levels deep on each side.</figcaption>
+        </figure>
+    </div>
+</section>
+
+<section class="wrap" id="card">
+    <h2>Six answers per hover.</h2>
+    <p class="section-sub">The details card reads the function so you don't have to — every row is extracted from source and the call hierarchy, deterministically.</p>
+    <div class="anatomy">
+        <div class="dcard" aria-label="Example details card">
+            <div class="head"><span class="name">chargeCustomer</span><span class="loc">payment.service.ts:88</span></div>
+            <div class="code">async chargeCustomer(order: Order): Promise&lt;Receipt&gt;</div>
+            <div class="row"><span class="glyph" style="color:#58a6ff">→</span><span class="rowlabel">in</span><div class="entries">await this.payments.chargeCustomer(order)  — placeOrder</div></div>
+            <div class="row"><span class="glyph" style="color:#57d364">↩</span><span class="rowlabel">out</span><div class="entries">new Receipt(charge.id, order.total)</div></div>
+            <div class="row"><span class="glyph" style="color:#f47067">▲</span><span class="rowlabel">guards</span><div class="entries">if (order.total &lt;= 0) → throw InvalidOrderError</div></div>
+            <div class="row"><span class="glyph" style="color:#e3b341">Δ</span><span class="rowlabel">mutates</span><div class="entries">lastChargeAt</div></div>
+            <div class="row"><span class="glyph" style="color:#76e3ea">←</span><span class="rowlabel">called by</span><div class="entries">placeOrder · retryFailedOrders</div></div>
+            <div class="row"><span class="glyph" style="color:#8b949e">◷</span><span class="rowlabel">git</span><div class="entries">3 weeks ago · sam · fix(PAY-212): idempotent retries</div></div>
+            <div class="chips"><span class="chip">async</span><span class="chip">24 lines</span><span class="chip">1 param</span></div>
+        </div>
+        <ul class="rowkey">
+            <li><span class="glyph" style="color:#58a6ff">→</span><span><b>in</b> — <span class="desc">the exact line that invokes this function, from the caller on the hovered edge.</span></span></li>
+            <li><span class="glyph" style="color:#57d364">↩</span><span><b>out</b> — <span class="desc">its return expressions, straight from the body.</span></span></li>
+            <li><span class="glyph" style="color:#f47067">▲</span><span><b>guards</b> — <span class="desc">early exits: the <code>if (…) return / throw</code> lines that stop execution.</span></span></li>
+            <li><span class="glyph" style="color:#e3b341">Δ</span><span><b>mutates</b> — <span class="desc">state writes (<code>this.x =</code>), so you know what a call touches.</span></span></li>
+            <li><span class="glyph" style="color:#76e3ea">←</span><span><b>called by</b> — <span class="desc">every caller by name: the blast radius before you edit.</span></span></li>
+            <li><span class="glyph" style="color:#8b949e">◷</span><span><b>git</b> — <span class="desc">the last commit that touched these lines, via <code>git log -L</code>.</span></span></li>
+        </ul>
+    </div>
+</section>
+
+<section class="wrap" id="how">
+    <h2>How it works.</h2>
+    <div class="how">
+        <div><b>The editor already knows the graph.</b><p>Call Charts asks the TypeScript language server the same questions that power “Go to Definition” — what does this call, who calls this — three levels deep each way.</p></div>
+        <div><b>The chart is drawn, not screenshotted.</b><p>A tidy-tree layout positions callers left and callees right of your function, colored by layer from the filename. Hover charts render into the tooltip; the expand view is a live page with tracing and zoom.</p></div>
+        <div><b>The card is extraction, not generation.</b><p>Signatures, guards, returns and mutations come from reading the source with strict rules; ownership comes from your local git. Deterministic — same code in, same card out.</p></div>
+        <div><b>Local, small, MIT.</b><p>Zero network calls, zero telemetry, zero runtime dependencies — a 70&nbsp;KB install that talks only to your editor and your git.</p></div>
+    </div>
+</section>
+
+<section class="wrap" id="install">
+    <h2>Install.</h2>
+    <div class="install-panel">
+        <div class="cmd"><code id="install-cmd">ext install waleed.call-charts</code><button class="copy-btn" id="copy-cmd" type="button">Copy</button></div>
+        <p class="install-alt">Paste into VS Code's Quick Open (<code>⌘P</code> / <code>Ctrl+P</code>) — or search “Call Charts” in the Extensions panel, or grab it from the <a href="https://marketplace.visualstudio.com/items?itemName=waleed.call-charts">marketplace</a>. Works in VS Code and Cursor, on TypeScript and JavaScript.</p>
+    </div>
+</section>
+</main>
+
+<footer class="wrap">
+    <p class="statement">Made so the next dev doesn't have to read the whole file.</p>
+    <div class="foot-row">
+        <a href="https://github.com/wahmd/call-charts">GitHub</a>
+        <a href="https://marketplace.visualstudio.com/items?itemName=waleed.call-charts">Marketplace</a>
+        <a href="https://github.com/wahmd/call-charts/blob/main/LICENSE">MIT License</a>
+        <span>Every chart on this page is real extension output.</span>
+    </div>
+</footer>
+
+<script>
+// ---- copy button — silent success ----
+const copyBtn = document.getElementById('copy-cmd');
+copyBtn.addEventListener('click', async () => {
+    try {
+        await navigator.clipboard.writeText(document.getElementById('install-cmd').textContent);
+        copyBtn.textContent = 'Copied';
+        copyBtn.classList.add('done');
+        setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('done'); }, 1600);
+    } catch { /* clipboard unavailable — leave the text selectable */ }
+});
+
+// ---- interactive playground — the extension's real trace code, scoped to this page ----
+(function () {
+    const demo = document.getElementById('playground');
+    const svg = demo.querySelector('svg');
+    if (!svg) { return; }
+    const status = document.getElementById('demo-status');
+
+    const CANNED = {
+        placeOrder: {
+            name: 'placeOrder', location: 'order.controller.ts:41',
+            signature: 'public placeOrder = async (req: Request, res: Response): Promise<void>',
+            groups: [
+                { kind: 'in', entries: ['await controller.placeOrder(req, res)  — checkout'] },
+                { kind: 'out', entries: ['res.status(201).send(receipt)'] },
+                { kind: 'guards', entries: ['if (!req.body.items?.length) → return 400'] },
+                { kind: 'callers', entries: ['checkout · retryFailedOrders'] },
+                { kind: 'git', entries: ['5 days ago · maya · feat(SHOP-83): retries'] },
+            ],
+            facts: ['async', '31 lines', '2 params'],
+        },
+        createOrder: {
+            name: 'createOrder', location: 'order.service.ts:52',
+            signature: 'async createOrder(cart: Cart, userId: string): Promise<Order>',
+            groups: [
+                { kind: 'in', entries: ['await this.orders.createOrder(cart, req.user.id)  — placeOrder'] },
+                { kind: 'out', entries: ['order'] },
+                { kind: 'guards', entries: ['if (!stockHeld) → throw OutOfStockError'] },
+                { kind: 'callers', entries: ['placeOrder'] },
+                { kind: 'git', entries: ['2 weeks ago · sam · fix(SHOP-71): stock race'] },
+            ],
+            facts: ['async', '26 lines', '2 params'],
+        },
+        reserveStock: {
+            name: 'reserveStock', location: 'inventory.service.ts:19',
+            signature: 'async reserveStock(items: LineItem[]): Promise<boolean>',
+            groups: [
+                { kind: 'in', entries: ['await this.inventory.reserveStock(cart.items)  — createOrder'] },
+                { kind: 'out', entries: ['results.every((r) => r.held)'] },
+                { kind: 'callers', entries: ['createOrder'] },
+                { kind: 'git', entries: ['2 weeks ago · sam · fix(SHOP-71): stock race'] },
+            ],
+            facts: ['async', '14 lines', '1 param'],
+        },
+        decrement: {
+            name: 'decrement', location: 'inventory-database.ts:33',
+            signature: 'async decrement(sku: string, qty: number): Promise<HoldResult>',
+            groups: [
+                { kind: 'in', entries: ['this.db.decrement(item.sku, item.qty)  — reserveStock'] },
+                { kind: 'out', entries: ['{ held: updated.modifiedCount === 1 }'] },
+                { kind: 'callers', entries: ['reserveStock'] },
+                { kind: 'git', entries: ['1 month ago · elena · feat(SHOP-55): atomic holds'] },
+            ],
+            facts: ['async', '9 lines', '2 params', 'pass-through'],
+        },
+        insertOrder: {
+            name: 'insertOrder', location: 'order-database.ts:12',
+            signature: 'async insertOrder(order: Order): Promise<Order>',
+            groups: [
+                { kind: 'in', entries: ['await this.db.insertOrder(order)  — createOrder'] },
+                { kind: 'out', entries: ['OrderModel.create(order)'] },
+                { kind: 'callers', entries: ['createOrder'] },
+            ],
+            facts: ['async', '5 lines', '1 param', 'pass-through'],
+        },
+        chargeCustomer: {
+            name: 'chargeCustomer', location: 'payment.service.ts:88',
+            signature: 'async chargeCustomer(order: Order): Promise<Receipt>',
+            groups: [
+                { kind: 'in', entries: ['await this.payments.chargeCustomer(order)  — placeOrder'] },
+                { kind: 'out', entries: ['new Receipt(charge.id, order.total)'] },
+                { kind: 'guards', entries: ['if (order.total <= 0) → throw InvalidOrderError'] },
+                { kind: 'mutates', entries: ['lastChargeAt'] },
+                { kind: 'callers', entries: ['placeOrder · retryFailedOrders'] },
+                { kind: 'git', entries: ['3 weeks ago · sam · fix(PAY-212): idempotent retries'] },
+            ],
+            facts: ['async', '24 lines', '1 param'],
+        },
+        createCharge: {
+            name: 'createCharge', location: 'payment-database.ts:27',
+            signature: 'async createCharge(amount: number, token: string): Promise<Charge>',
+            groups: [
+                { kind: 'in', entries: ['await this.db.createCharge(order.total, order.token)  — chargeCustomer'] },
+                { kind: 'out', entries: ['ChargeModel.create({ amount, token })'] },
+                { kind: 'callers', entries: ['chargeCustomer'] },
+            ],
+            facts: ['async', '7 lines', '2 params', 'pass-through'],
+        },
+        sendReceipt: {
+            name: 'sendReceipt', location: 'email.service.ts:61',
+            signature: 'async sendReceipt(receipt: Receipt, to: string): Promise<void>',
+            groups: [
+                { kind: 'in', entries: ['void this.email.sendReceipt(receipt, user.email)  — placeOrder'] },
+                { kind: 'guards', entries: ["if (!to.includes('@')) → return"] },
+                { kind: 'callers', entries: ['placeOrder'] },
+                { kind: 'git', entries: ['2 months ago · maya · feat(SHOP-12): receipts'] },
+            ],
+            facts: ['async', '12 lines', '2 params'],
+        },
+        checkout: {
+            name: 'checkout', location: 'cart.controller.ts:24',
+            signature: 'public checkout = async (req: Request, res: Response): Promise<void>',
+            groups: [
+                { kind: 'out', entries: ['controller.placeOrder(req, res)'] },
+                { kind: 'callers', entries: ['router.post'] },
+            ],
+            facts: ['async', '6 lines', '2 params', 'pass-through'],
+        },
+        'router.post': {
+            name: 'router.post', location: 'shop.route.ts:9',
+            signature: "router.post('/checkout', authenticate, checkout)",
+            groups: [{ kind: 'callers', entries: ['none — route registration'] }],
+            facts: ['2 lines'],
+        },
+        retryFailedOrders: {
+            name: 'retryFailedOrders', location: 'order.cron.ts:15',
+            signature: 'async retryFailedOrders(): Promise<void>',
+            groups: [
+                { kind: 'out', entries: ['(void)'] },
+                { kind: 'guards', entries: ['if (!failed.length) → return'] },
+                { kind: 'callers', entries: ['none — cron entry point'] },
+            ],
+            facts: ['async', '18 lines', '0 params'],
+        },
+    };
+
+    const edgeByKey = new Map();
+    const edgesFromParent = new Map();
+    for (const path of demo.querySelectorAll('path[data-from]')) {
+        edgeByKey.set(path.dataset.from + '->' + path.dataset.to, path);
+        const siblings = edgesFromParent.get(path.dataset.from) ?? [];
+        siblings.push(path);
+        edgesFromParent.set(path.dataset.from, siblings);
+    }
+    const nodeById = new Map();
+    for (const el of demo.querySelectorAll('.fn-node')) {
+        nodeById.set(el.dataset.nodeId, el);
+    }
+
+    function depthOf(el) {
+        let depth = 0;
+        let current = el;
+        while (current && current.dataset.parentId) { depth += 1; current = nodeById.get(current.dataset.parentId); }
+        return depth;
+    }
+    function chainToRoot(el) {
+        const chain = [];
+        let current = el;
+        while (current && current.dataset.parentId) {
+            const edge = edgeByKey.get(current.dataset.parentId + '->' + current.dataset.nodeId);
+            if (!edge) { break; }
+            chain.push(edge);
+            current = nodeById.get(current.dataset.parentId);
+        }
+        return chain;
+    }
+    function callerFeedStages(startEl) {
+        const groups = new Map();
+        let maxDepth = 0;
+        const startDepth = depthOf(startEl);
+        const queue = [startEl];
+        while (queue.length) {
+            const current = queue.shift();
+            for (const edge of edgesFromParent.get(current.dataset.nodeId) ?? []) {
+                const child = nodeById.get(edge.dataset.to);
+                if (!child || child.dataset.side !== 'caller') { continue; }
+                const depth = depthOf(child);
+                if (!groups.has(depth)) { groups.set(depth, []); }
+                groups.get(depth).push(edge);
+                maxDepth = Math.max(maxDepth, depth);
+                queue.push(child);
+            }
+        }
+        const stages = [];
+        for (let depth = maxDepth; depth > startDepth; depth--) { stages.push(groups.get(depth) ?? []); }
+        return stages;
+    }
+
+    const allEdges = [...demo.querySelectorAll('path[data-from]')];
+    const allNodes = [...demo.querySelectorAll('.fn-node')];
+    const DIM_NODE = 'opacity(0.35) saturate(0.5)';
+    let packets = [];
+    let rafId = 0;
+    let flowToken = 0;
+
+    function resetStyles() {
+        for (const edge of allEdges) {
+            edge.style.filter = ''; edge.style.stroke = ''; edge.style.strokeWidth = '';
+            edge.setAttribute('marker-end', 'url(#arrow)');
+        }
+        for (const nodeEl of allNodes) { nodeEl.style.filter = ''; }
+    }
+    function stopFlow() {
+        flowToken += 1;
+        if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+        for (const packet of packets) { packet.circle.remove(); }
+        packets = [];
+        resetStyles();
+    }
+    function startFlow(el) {
+        stopFlow();
+        const token = flowToken;
+        const rootEl = [...nodeById.values()].find((node) => !node.dataset.parentId);
+        if (!rootEl) { return; }
+        let stages;
+        if (el.dataset.side === 'caller') {
+            stages = callerFeedStages(el);
+            for (const edge of chainToRoot(el)) { stages.push([edge]); }
+        } else if (el === rootEl) {
+            stages = callerFeedStages(rootEl);
+        } else {
+            stages = callerFeedStages(rootEl);
+            for (const edge of chainToRoot(el).reverse()) { stages.push([edge]); }
+        }
+        if (!stages.length) { return; }
+
+        const activeEdges = new Set();
+        for (const edges of stages) { for (const edge of edges) { activeEdges.add(edge); } }
+        const activeNodeIds = new Set();
+        for (const edge of activeEdges) { activeNodeIds.add(edge.dataset.from); activeNodeIds.add(edge.dataset.to); }
+        for (const edge of allEdges) {
+            if (activeEdges.has(edge)) {
+                edge.style.stroke = edge.dataset.color;
+                edge.style.strokeWidth = '2.2';
+                edge.setAttribute('marker-end', 'url(#arrow-' + edge.dataset.cat + ')');
+            } else {
+                edge.style.filter = 'opacity(0.22)';
+            }
+        }
+        for (const nodeEl of allNodes) {
+            if (!activeNodeIds.has(nodeEl.dataset.nodeId)) { nodeEl.style.filter = DIM_NODE; }
+        }
+        const hoverGlow = 'drop-shadow(0 0 6px ' + (el.querySelector('rect')?.getAttribute('stroke') ?? '#8a939e') + ')';
+        el.style.filter = hoverGlow;
+
+        const pulse = (nodeEl) => {
+            if (!nodeEl) { return; }
+            const color = nodeEl.querySelector('rect')?.getAttribute('stroke') ?? '#8a939e';
+            nodeEl.style.filter = 'drop-shadow(0 0 9px ' + color + ')';
+            setTimeout(() => {
+                if (flowToken !== token) { return; }
+                if (nodeEl === el) { nodeEl.style.filter = hoverGlow; }
+                else { nodeEl.style.filter = activeNodeIds.has(nodeEl.dataset.nodeId) ? '' : DIM_NODE; }
+            }, 240);
+        };
+
+        stages.forEach((edges, stage) => {
+            for (const edge of edges) {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('r', '3.2');
+                circle.setAttribute('fill', edge.dataset.color);
+                circle.setAttribute('opacity', '0');
+                circle.style.filter = 'drop-shadow(0 0 3px ' + edge.dataset.color + ')';
+                svg.appendChild(circle);
+                packets.push({ edge, stage, circle, length: edge.getTotalLength() });
+            }
+        });
+
+        const HOP_MS = 420;
+        const PAUSE_MS = 350;
+        const cycle = stages.length * HOP_MS + PAUSE_MS;
+        let startTime = null;
+        let lastStage = -1;
+        const step = (now) => {
+            if (startTime === null) { startTime = now; }
+            const t = (now - startTime) % cycle;
+            const stage = Math.floor(t / HOP_MS);
+            if (stage !== lastStage) {
+                for (const packet of packets) {
+                    if (packet.stage === lastStage) { pulse(nodeById.get(packet.edge.dataset.end)); }
+                }
+                lastStage = stage;
+            }
+            const fraction = (t - stage * HOP_MS) / HOP_MS;
+            for (const packet of packets) {
+                if (packet.stage === stage) {
+                    const point = packet.edge.getPointAtLength(fraction * packet.length);
+                    packet.circle.setAttribute('opacity', '0.95');
+                    packet.circle.setAttribute('cx', point.x);
+                    packet.circle.setAttribute('cy', point.y);
+                } else {
+                    packet.circle.setAttribute('opacity', '0');
+                }
+            }
+            rafId = requestAnimationFrame(step);
+        };
+        rafId = requestAnimationFrame(step);
+    }
+
+    // details card
+    const card = document.createElement('div');
+    card.className = 'dcard';
+    document.body.appendChild(card);
+    let hoverEl = null;
+    let closeTimer = 0;
+    let intentTimer = 0;
+    const ROW_META = {
+        in: { glyph: '→', color: '#58a6ff', label: 'in' },
+        out: { glyph: '↩', color: '#57d364', label: 'out' },
+        guards: { glyph: '▲', color: '#f47067', label: 'guards' },
+        mutates: { glyph: 'Δ', color: '#e3b341', label: 'mutates' },
+        callers: { glyph: '←', color: '#76e3ea', label: 'called by' },
+        git: { glyph: '◷', color: '#8b949e', label: 'git' },
+    };
+    function block(parent, tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) { node.className = className; }
+        if (text !== undefined) { node.textContent = text; }
+        parent.appendChild(node);
+        return node;
+    }
+    function renderCard(el) {
+        const name = el.querySelector('text')?.textContent ?? '';
+        const details = CANNED[name];
+        if (!details) { return; }
+        card.textContent = '';
+        const head = block(card, 'div', 'head');
+        block(head, 'span', 'name', details.name);
+        block(head, 'span', 'loc', details.location);
+        block(card, 'div', 'code', details.signature);
+        for (const group of details.groups) {
+            const meta = ROW_META[group.kind];
+            if (!meta) { continue; }
+            const row = block(card, 'div', 'row');
+            const glyph = block(row, 'span', 'glyph', meta.glyph);
+            glyph.style.color = meta.color;
+            block(row, 'span', 'rowlabel', meta.label);
+            const entries = block(row, 'div', 'entries');
+            for (const entry of group.entries) { block(entries, 'div', '', entry); }
+        }
+        const chips = block(card, 'div', 'chips');
+        for (const fact of details.facts) { block(chips, 'span', 'chip', fact); }
+        card.style.borderColor = el.querySelector('rect')?.getAttribute('stroke') ?? '';
+        card.classList.add('open');
+        const rect = el.getBoundingClientRect();
+        const left = Math.max(8, Math.min(rect.left + window.scrollX, window.scrollX + document.documentElement.clientWidth - card.offsetWidth - 12));
+        card.style.left = left + 'px';
+        card.style.top = rect.bottom + window.scrollY + 10 + 'px';
+    }
+    function hideCard() { card.classList.remove('open'); }
+    function scheduleClose() {
+        clearTimeout(closeTimer);
+        closeTimer = setTimeout(() => { hoverEl = null; stopFlow(); hideCard(); }, 160);
+    }
+    card.addEventListener('mouseenter', () => clearTimeout(closeTimer));
+    card.addEventListener('mouseleave', scheduleClose);
+
+    for (const el of allNodes) {
+        el.addEventListener('click', () => {
+            status.textContent = 'In the editor, that click jumps straight to ' + (el.querySelector('text')?.textContent ?? 'the function') + '’s definition.';
+            clearTimeout(status._t);
+            status._t = setTimeout(() => { status.textContent = ''; }, 3200);
+        });
+        el.addEventListener('mouseenter', () => {
+            clearTimeout(closeTimer);
+            clearTimeout(intentTimer);
+            if (hoverEl !== el) { hideCard(); startFlow(el); hoverEl = el; }
+            intentTimer = setTimeout(() => { if (hoverEl === el) { renderCard(el); } }, 250);
+        });
+        el.addEventListener('mouseleave', () => { clearTimeout(intentTimer); scheduleClose(); });
+    }
+})();
+</script>
+</body>
+</html>
