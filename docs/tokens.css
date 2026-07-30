@@ -49,3 +49,7 @@
     --dur-short: 160ms;
     --dur-med: 300ms;
 }
+
+/* live badge */
+:root { --color-live-halo: oklch(74% 0.09 185 / 0.4); }
+:root { --color-mac-red: oklch(66% 0.19 25); --color-mac-yellow: oklch(80% 0.16 80); --color-mac-green: oklch(72% 0.19 150); }
