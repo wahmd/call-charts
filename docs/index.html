@@ -33,6 +33,10 @@ body {
     background-attachment: fixed;
 }
 ::selection { background: var(--color-accent-deep); color: var(--color-ink); }
+* { scrollbar-width: thin; scrollbar-color: var(--color-line) transparent; }
+::-webkit-scrollbar { height: 6px; width: 6px; }
+::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-track { background: transparent; }
 :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: 4px; }
 
 .wrap { max-width: 68rem; margin: 0 auto; padding: 0 var(--space-md); }
@@ -85,9 +89,9 @@ h1 .lit { color: var(--color-accent); }
 .btn-ghost:hover { border-color: var(--color-ink-faint); color: var(--color-ink); }
 
 /* ---- charts ---- */
-.chart { border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: oklch(14.5% 0.014 275 / 0.6); overflow-x: auto; overscroll-behavior-x: contain; }
-.chart-inner { padding: var(--space-md); width: max-content; min-width: 100%; }
-.chart svg { display: block; }
+.chart { border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: oklch(14.5% 0.014 275 / 0.6); }
+.chart-inner { padding: var(--space-md); }
+.chart svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
 .hero .chart { margin-top: var(--space-2xl); }
 figure { margin: 0; min-width: 0; }
 figcaption { margin-top: var(--space-sm); color: var(--color-ink-faint); font-size: var(--text-sm); }
