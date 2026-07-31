@@ -1,0 +1,9 @@
+src/**
+tsconfig.json
+.eslintrc.json
+.prettierrc.json
+.gitignore
+.vscode/**
+node_modules/**
+*.vsix
+out/**/*.map
