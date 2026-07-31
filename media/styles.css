@@ -1,0 +1,162 @@
+body {
+    margin: 0;
+    padding: 10px 16px;
+}
+#hint {
+    color: var(--vscode-descriptionForeground);
+    font-size: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.lgi {
+    font-size: 11px;
+    margin-left: 10px;
+    white-space: nowrap;
+}
+.lgi i {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    margin-right: 5px;
+}
+#parentsBtn {
+    position: absolute;
+    transform: translateX(-50%);
+    font: inherit;
+    font-size: 10.5px;
+    white-space: nowrap;
+    color: var(--vscode-descriptionForeground);
+    background: var(--vscode-editorWidget-background, #252526);
+    border: 1px solid var(--vscode-editorWidget-border, #454545);
+    border-radius: 20px;
+    padding: 2px 11px;
+    cursor: pointer;
+}
+#parentsBtn:hover {
+    color: var(--vscode-foreground);
+    border-color: var(--vscode-focusBorder, #6e7681);
+}
+#wrap {
+    position: relative;
+    transform-origin: 0 0;
+    width: max-content;
+}
+.fn-node {
+    cursor: pointer;
+    transition: filter 0.25s ease;
+}
+.fn-node rect {
+    transition: stroke-width 0.15s ease;
+}
+.fn-node:hover rect {
+    stroke-width: 3;
+}
+#wrap path {
+    transition:
+        stroke 0.25s ease,
+        stroke-width 0.25s ease,
+        filter 0.25s ease;
+}
+#card {
+    position: absolute;
+    width: 430px;
+    z-index: 10;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--vscode-editorWidget-background, #1f2229);
+    border: 1px solid var(--vscode-editorWidget-border, #454545);
+    border-radius: 8px;
+    padding: 11px 13px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    font-size: 12px;
+}
+#card.open {
+    display: flex;
+    animation: cardIn 0.18s ease-out;
+}
+@keyframes cardIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    #card.open {
+        animation: none;
+    }
+}
+#card .head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+#card .name {
+    font-weight: 600;
+    font-size: 13px;
+}
+#card .loc {
+    color: var(--vscode-descriptionForeground);
+    font-size: 11px;
+    margin-left: auto;
+    flex: none;
+}
+#card .code {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11.5px;
+    background: rgba(128, 128, 128, 0.09);
+    border-radius: 5px;
+    padding: 6px 9px;
+    overflow-x: auto;
+    white-space: pre;
+}
+#card .row {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+}
+#card .glyph {
+    flex: none;
+    width: 14px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 12px;
+}
+#card .rowlabel {
+    flex: none;
+    width: 66px;
+    color: var(--vscode-descriptionForeground);
+    font-size: 9.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+#card .entries {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+}
+#card .chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+#card .chip {
+    font-size: 10.5px;
+    color: var(--vscode-descriptionForeground);
+    border: 1px solid var(--vscode-editorWidget-border, #454545);
+    border-radius: 20px;
+    padding: 0 8px;
+}

@@ -61,7 +61,7 @@
     "scripts": {
         "compile": "tsc -p ./",
         "watch": "tsc -w -p ./",
-        "lint": "eslint src --ext .ts",
+        "lint": "eslint src media --ext .ts,.js",
         "format": "prettier --write \"src/**/*.ts\"",
         "format:check": "prettier --check \"src/**/*.ts\"",
         "package": "vsce package",
