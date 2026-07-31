@@ -1,35 +1,61 @@
-/* Hallmark · tokens — Call Charts landing page
- * theme: custom (vibe: "midnight editor, flowing signal")
- * axes: paper-band dark · display-style geometric-sans · accent-hue cool-purple
+/* Design tokens — Call Charts landing page
+ * paper oklch(99.2% 0.002 260) light · ink oklch(21% 0.03 265) · accent purple (brand)
+ * display Poppins 600 · script Playwrite TZ (hero emphasis) · mono JetBrains Mono
  */
 :root {
-    /* color */
-    --color-paper: oklch(16% 0.015 275);
-    --color-paper-2: oklch(19.5% 0.018 275);
-    --color-paper-3: oklch(23.5% 0.02 275);
-    --color-ink: oklch(93% 0.01 275);
-    --color-ink-dim: oklch(71% 0.018 275);
-    --color-ink-faint: oklch(56% 0.018 275);
-    --color-line: oklch(31% 0.02 275);
-    --color-accent: oklch(70% 0.115 300);
-    --color-accent-deep: oklch(58% 0.13 300);
-    --color-accent-warm: oklch(76% 0.1 70);
-    --color-signal-blue: oklch(66% 0.11 255);
-    --color-signal-teal: oklch(74% 0.09 185);
-    --color-focus: oklch(78% 0.12 300);
-    --glass-bg: oklch(21% 0.02 275 / 0.62);
+    /* light system */
+    --color-paper: oklch(99.2% 0.002 260);
+    --color-surface: oklch(97.2% 0.004 265);
+    --color-ink: oklch(21% 0.03 265);
+    --color-ink-dim: oklch(45% 0.02 265);
+    --color-ink-faint: oklch(58% 0.015 265);
+    --color-line: oklch(90% 0.006 262);
+    --color-accent: oklch(52% 0.15 300);
+    --color-accent-soft: oklch(52% 0.15 300 / 0.1);
+    --color-accent-bright: oklch(70% 0.115 300);
+    --color-live: oklch(72% 0.13 165);
+    --color-live-halo: oklch(72% 0.13 165 / 0.35);
+
+    /* dark band (hero, windows, how-it-works) — the product's own night palette */
+    --color-band: oklch(15% 0.02 272);
+    --color-band-2: oklch(19.5% 0.022 272);
+    --color-band-3: oklch(24% 0.022 272);
+    --color-band-ink: oklch(94% 0.008 270);
+    --color-band-dim: oklch(70% 0.015 270);
+    --color-band-line: oklch(30% 0.02 272);
+    --color-star: oklch(96% 0.005 270);
+    --glass-bg: oklch(21% 0.02 275 / 0.72);
     --glass-line: oklch(45% 0.03 285 / 0.35);
 
+    /* backdrop frame */
+    --color-gridline: oklch(55% 0.02 275 / 0.18);
+    --color-dot: oklch(55% 0.02 275 / 0.3);
+    --color-dot-bright: oklch(85% 0.02 275 / 0.13);
+
+    /* simulated editor content — matches the chart SVGs' fixed palette */
+    --color-band-bright: #e6edf3;
+    --color-code-keyword: #ff7b72;
+    --color-code-fn: #d2a8ff;
+    --color-code-type: #79c0ff;
+    --color-layer-service: #9d7cd8;
+    --color-layer-other: #8a939e;
+
+    /* mac window chrome */
+    --color-mac-red: oklch(66% 0.19 25);
+    --color-mac-yellow: oklch(80% 0.16 80);
+    --color-mac-green: oklch(72% 0.19 150);
+
     /* type */
-    --font-display: 'Sora', system-ui, sans-serif;
-    --font-body: 'Sora', system-ui, sans-serif;
+    --font-display: 'Poppins', system-ui, sans-serif;
+    --font-body: 'Poppins', system-ui, sans-serif;
+    --font-script: 'Playwrite TZ', cursive;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    --text-display: clamp(2.5rem, 5.5vw + 0.9rem, 4.6rem);
-    --text-2xl: clamp(1.55rem, 2.2vw + 0.8rem, 2.2rem);
-    --text-lg: 1.17rem;
+    --text-display: clamp(2.4rem, 4.4vw + 0.9rem, 3.9rem);
+    --text-2xl: clamp(1.7rem, 2.4vw + 0.7rem, 2.6rem);
+    --text-lg: 1.16rem;
     --text-md: 1rem;
-    --text-sm: 0.885rem;
-    --text-xs: 0.78rem;
+    --text-sm: 0.9rem;
+    --text-xs: 0.79rem;
 
     /* space — 4pt scale */
     --space-2xs: 0.25rem;
@@ -38,18 +64,14 @@
     --space-md: 1.25rem;
     --space-lg: 2rem;
     --space-xl: 3.25rem;
-    --space-2xl: 5.25rem;
-    --space-3xl: 8rem;
+    --space-2xl: 5.5rem;
+    --space-3xl: 8.5rem;
 
     /* shape + motion */
-    --radius-md: 10px;
-    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
     --radius-pill: 999px;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --dur-short: 160ms;
     --dur-med: 300ms;
 }
-
-/* live badge */
-:root { --color-live-halo: oklch(74% 0.09 185 / 0.4); }
-:root { --color-mac-red: oklch(66% 0.19 25); --color-mac-yellow: oklch(80% 0.16 80); --color-mac-green: oklch(72% 0.19 150); }
