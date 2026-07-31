@@ -294,7 +294,15 @@ function requestDetails(el) {
 
 window.addEventListener('message', (event) => {
     const message = event.data;
-    if (!message || message.type !== 'details') {
+    if (!message) {
+        return;
+    }
+    if (message.type === 'invalidate') {
+        // a workspace file changed: cached details may be stale
+        cardCache.clear();
+        return;
+    }
+    if (message.type !== 'details') {
         return;
     }
     cardCache.set(message.nodeId, message.details);

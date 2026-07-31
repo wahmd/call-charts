@@ -3,7 +3,7 @@ import { buildTree, CallNode, MAX_DEPTH, NodeBudget, prepareCallHierarchyItem } 
 import { categoriesPresent, CATEGORY_COLORS, CATEGORY_LABELS, GraphNode, toGraph } from '../callGraph/model';
 import { renderSvg, RootAnchor } from '../callGraph/svg';
 import { clearDetailsCache, computeNodeDetails, ParentRef } from '../details/compute';
-import { DetailsReplyMessage, WebviewToHostMessage } from '../protocol';
+import { DetailsReplyMessage, InvalidateMessage, WebviewToHostMessage } from '../protocol';
 import { openLocation } from '../util';
 import { flowPanelHtml } from './html';
 
@@ -17,8 +17,22 @@ export class FlowPanelController implements vscode.Disposable {
     private panel: vscode.WebviewPanel | undefined;
     private context: ExpandContext | undefined;
     private isShowingParents = false;
+    private invalidateTimer: NodeJS.Timeout | undefined;
 
     constructor(private readonly extensionUri: vscode.Uri) {}
+
+    // edits anywhere can change what the details card would show; drop both caches
+    // (debounced — this fires per keystroke while the panel is open)
+    private scheduleInvalidate(): void {
+        if (this.invalidateTimer) {
+            clearTimeout(this.invalidateTimer);
+        }
+        this.invalidateTimer = setTimeout(() => {
+            clearDetailsCache();
+            const message: InvalidateMessage = { type: 'invalidate' };
+            void this.panel?.webview.postMessage(message);
+        }, 300);
+    }
 
     async expand(uriString: string, line: number, character: number): Promise<void> {
         this.context = { uriString, line, character };
@@ -78,7 +92,9 @@ export class FlowPanelController implements vscode.Disposable {
                     localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'media')],
                 }
             );
+            const changeSubscription = vscode.workspace.onDidChangeTextDocument(() => this.scheduleInvalidate());
             this.panel.onDidDispose(() => {
+                changeSubscription.dispose();
                 this.panel = undefined;
             });
             this.panel.webview.onDidReceiveMessage((message: WebviewToHostMessage) => this.onMessage(message));
