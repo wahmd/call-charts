@@ -1,0 +1,77 @@
+/* Design tokens — Call Charts landing page
+ * paper oklch(99.2% 0.002 260) light · ink oklch(21% 0.03 265) · accent purple (brand)
+ * display Poppins 600 · script Playwrite TZ (hero emphasis) · mono JetBrains Mono
+ */
+:root {
+    /* light system */
+    --color-paper: oklch(99.2% 0.002 260);
+    --color-surface: oklch(97.2% 0.004 265);
+    --color-ink: oklch(21% 0.03 265);
+    --color-ink-dim: oklch(45% 0.02 265);
+    --color-ink-faint: oklch(58% 0.015 265);
+    --color-line: oklch(90% 0.006 262);
+    --color-accent: oklch(52% 0.15 300);
+    --color-accent-soft: oklch(52% 0.15 300 / 0.1);
+    --color-accent-bright: oklch(70% 0.115 300);
+    --color-live: oklch(72% 0.13 165);
+    --color-live-halo: oklch(72% 0.13 165 / 0.35);
+
+    /* dark band (hero, windows, how-it-works) — the product's own night palette */
+    --color-band: oklch(15% 0.02 272);
+    --color-band-2: oklch(19.5% 0.022 272);
+    --color-band-3: oklch(24% 0.022 272);
+    --color-band-ink: oklch(94% 0.008 270);
+    --color-band-dim: oklch(70% 0.015 270);
+    --color-band-line: oklch(30% 0.02 272);
+    --color-star: oklch(96% 0.005 270);
+    --glass-bg: oklch(21% 0.02 275 / 0.72);
+    --glass-line: oklch(45% 0.03 285 / 0.35);
+
+    /* backdrop frame */
+    --color-gridline: oklch(55% 0.02 275 / 0.18);
+    --color-dot: oklch(55% 0.02 275 / 0.3);
+    --color-dot-bright: oklch(85% 0.02 275 / 0.13);
+
+    /* simulated editor content — matches the chart SVGs' fixed palette */
+    --color-band-bright: #e6edf3;
+    --color-code-keyword: #ff7b72;
+    --color-code-fn: #d2a8ff;
+    --color-code-type: #79c0ff;
+    --color-layer-service: #9d7cd8;
+    --color-layer-other: #8a939e;
+
+    /* mac window chrome */
+    --color-mac-red: oklch(66% 0.19 25);
+    --color-mac-yellow: oklch(80% 0.16 80);
+    --color-mac-green: oklch(72% 0.19 150);
+
+    /* type */
+    --font-display: 'Poppins', system-ui, sans-serif;
+    --font-body: 'Poppins', system-ui, sans-serif;
+    --font-script: 'Playwrite TZ', cursive;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --text-display: clamp(2.4rem, 4.4vw + 0.9rem, 3.9rem);
+    --text-2xl: clamp(1.7rem, 2.4vw + 0.7rem, 2.6rem);
+    --text-lg: 1.16rem;
+    --text-md: 1rem;
+    --text-sm: 0.9rem;
+    --text-xs: 0.79rem;
+
+    /* space — 4pt scale */
+    --space-2xs: 0.25rem;
+    --space-xs: 0.5rem;
+    --space-sm: 0.75rem;
+    --space-md: 1.25rem;
+    --space-lg: 2rem;
+    --space-xl: 3.25rem;
+    --space-2xl: 5.5rem;
+    --space-3xl: 8.5rem;
+
+    /* shape + motion */
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-pill: 999px;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-short: 160ms;
+    --dur-med: 300ms;
+}
