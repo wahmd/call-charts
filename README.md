@@ -7,6 +7,9 @@ Expand into a full-size interactive graph with execution tracing and per-functio
   <img src="media/demo.svg" width="760" alt="Hovering a function shows its call chart: callers, callees, and the layers they live in">
 </p>
 
+## Demo Video: 
+https://x.com/imwaleed_ahmad/status/2085135115001221261
+
 ## Features
 
 **Hover chart** — hovering a function name renders a layered flow chart of everything it calls
