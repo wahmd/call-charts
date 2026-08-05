@@ -1,6 +1,6 @@
 /* Design tokens — Call Charts landing page
  * paper oklch(99.2% 0.002 260) light · ink oklch(21% 0.03 265) · accent purple (brand)
- * display Poppins 600 · script Playwrite TZ (hero emphasis) · mono JetBrains Mono
+ * display Poppins 600 · emphasis Poppins italic + accent · mono JetBrains Mono
  */
 :root {
     /* light system */
@@ -48,7 +48,6 @@
     /* type */
     --font-display: 'Poppins', system-ui, sans-serif;
     --font-body: 'Poppins', system-ui, sans-serif;
-    --font-script: 'Playwrite TZ', cursive;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
     --text-display: clamp(2.4rem, 4.4vw + 0.9rem, 3.9rem);
     --text-2xl: clamp(1.7rem, 2.4vw + 0.7rem, 2.6rem);
