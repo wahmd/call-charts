@@ -1,0 +1,98 @@
+<svg viewBox="0 0 880 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hovering onSaveCustomer shows an animated call chart: updateCustomer and showToast, then setCustomerState and put">
+  <style>
+    :root { --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace; --sans: -apple-system, 'Segoe UI', system-ui, sans-serif; }
+    .code { font-family: var(--mono); font-size: 21px; }
+    .num  { font-family: var(--mono); font-size: 19px; fill: #4e5567; }
+    .t    { font-family: var(--sans); font-size: 19px; font-weight: 600; fill: #eef1f7; }
+    .f    { font-family: var(--mono); font-size: 12.5px; fill: #8a939e; }
+    .edge { stroke: #566078; stroke-width: 2; fill: none; stroke-dasharray: 1; }
+
+    .node, .edge, .dot { opacity: 0; }
+    g.node { transform-box: fill-box; transform-origin: center; }
+
+    /* one shared 7.5s loop; each element owns a window of it */
+    .root { animation: pop  7.5s infinite; animation-delay: 0s; }
+    .e1   { animation: draw1 7.5s linear infinite; }
+    .e2   { animation: draw2 7.5s linear infinite; }
+    .n1   { animation: pop1 7.5s infinite; }
+    .n2   { animation: pop2 7.5s infinite; }
+    .e3   { animation: draw3 7.5s linear infinite; }
+    .e4   { animation: draw4 7.5s linear infinite; }
+    .n3   { animation: pop3 7.5s infinite; }
+    .n4   { animation: pop4 7.5s infinite; }
+    .d3   { animation: dot3 7.5s infinite; }
+    .d4   { animation: dot4 7.5s infinite; }
+    .scene { animation: exit 7.5s infinite; }
+    .caret { animation: blink 1s steps(1) infinite; }
+
+    @keyframes pop   { 0%,2% { opacity:0; transform:scale(.85);} 7%,100% { opacity:1; transform:scale(1);} }
+    @keyframes pop1  { 0%,14% { opacity:0; transform:scale(.85);} 19%,100% { opacity:1; transform:scale(1);} }
+    @keyframes pop2  { 0%,16% { opacity:0; transform:scale(.85);} 21%,100% { opacity:1; transform:scale(1);} }
+    @keyframes pop3  { 0%,30% { opacity:0; transform:scale(.85);} 35%,100% { opacity:1; transform:scale(1);} }
+    @keyframes pop4  { 0%,32% { opacity:0; transform:scale(.85);} 37%,100% { opacity:1; transform:scale(1);} }
+    @keyframes draw1 { 0%,8%  { opacity:1; stroke-dashoffset:1;} 15%,100% { opacity:1; stroke-dashoffset:0;} }
+    @keyframes draw2 { 0%,10% { opacity:1; stroke-dashoffset:1;} 17%,100% { opacity:1; stroke-dashoffset:0;} }
+    @keyframes draw3 { 0%,24% { opacity:1; stroke-dashoffset:1;} 31%,100% { opacity:1; stroke-dashoffset:0;} }
+    @keyframes draw4 { 0%,26% { opacity:1; stroke-dashoffset:1;} 33%,100% { opacity:1; stroke-dashoffset:0;} }
+    @keyframes dot3  { 0%,28% { opacity:0;} 31%,100% { opacity:1;} }
+    @keyframes dot4  { 0%,30% { opacity:0;} 33%,100% { opacity:1;} }
+    @keyframes exit  { 0%,90% { opacity:1;} 97%,100% { opacity:0;} }
+    @keyframes blink { 0%,49% { opacity:1;} 50%,100% { opacity:0;} }
+
+    @media (prefers-reduced-motion: reduce) {
+      .node, .edge, .dot { opacity: 1; }
+      .edge { stroke-dashoffset: 0 !important; }
+      .root,.e1,.e2,.n1,.n2,.e3,.e4,.n3,.n4,.d3,.d4,.scene,.caret { animation: none; }
+    }
+  </style>
+
+  <!-- window -->
+  <rect x="1.5" y="1.5" width="877" height="457" rx="18" fill="#131722" stroke="#262b3a" stroke-width="1.5"/>
+
+  <!-- code line -->
+  <text class="num" x="38" y="56">64</text>
+  <rect x="163" y="28" width="182" height="38" rx="9" fill="#9d7cd8" fill-opacity="0.16" stroke="#9d7cd8" stroke-width="1.4"/>
+  <text class="code" x="90" y="56"><tspan fill="#ff7b72">async </tspan><tspan fill="#d2a8ff">onSaveCustomer</tspan><tspan fill="#e6edf3">(): </tspan><tspan fill="#79c0ff">Promise</tspan><tspan fill="#e6edf3">&lt;</tspan><tspan fill="#ff7b72">void</tspan><tspan fill="#e6edf3">&gt; {</tspan></text>
+  <rect class="caret" x="668" y="34" width="10" height="26" fill="#8a939e"/>
+  <line x1="1.5" y1="86" x2="878.5" y2="86" stroke="#232838" stroke-width="1.5"/>
+
+  <g class="scene">
+    <!-- edges -->
+    <path class="edge e1" pathLength="1" d="M255 262 C 300 248, 300 212, 345 199"/>
+    <path class="edge e2" pathLength="1" d="M255 282 C 300 298, 300 338, 345 349"/>
+    <path class="edge e3" pathLength="1" d="M570 186 C 606 172, 616 136, 650 121"/>
+    <path class="edge e4" pathLength="1" d="M570 206 C 606 222, 616 256, 650 269"/>
+    <circle class="dot d3" cx="600" cy="166" r="4.5" fill="#c8894a"/>
+    <circle class="dot d4" cx="600" cy="228" r="4.5" fill="#4fb99f"/>
+
+    <!-- root -->
+    <g class="node root">
+      <rect x="60" y="245" width="195" height="54" rx="12" fill="#0f1420" stroke="#6ea8fe" stroke-width="2.2"/>
+      <text class="t" x="157" y="279" text-anchor="middle">onSaveCustomer</text>
+    </g>
+
+    <!-- level 1 -->
+    <g class="node n1">
+      <rect x="345" y="165" width="225" height="62" rx="12" fill="#141020" stroke="#9d7cd8" stroke-width="2"/>
+      <text class="t" x="457" y="192" text-anchor="middle">updateCustomer</text>
+      <text class="f" x="457" y="214" text-anchor="middle">customer.service.ts</text>
+    </g>
+    <g class="node n2">
+      <rect x="345" y="320" width="195" height="62" rx="12" fill="#141020" stroke="#9d7cd8" stroke-width="2"/>
+      <text class="t" x="442" y="347" text-anchor="middle">showToast</text>
+      <text class="f" x="442" y="369" text-anchor="middle">toast.service.ts</text>
+    </g>
+
+    <!-- level 2 -->
+    <g class="node n3">
+      <rect x="650" y="85" width="225" height="62" rx="12" fill="#1a1410" stroke="#c8894a" stroke-width="2"/>
+      <text class="t" x="762" y="112" text-anchor="middle">setCustomerState</text>
+      <text class="f" x="762" y="134" text-anchor="middle">customer.store.ts</text>
+    </g>
+    <g class="node n4">
+      <rect x="650" y="240" width="160" height="62" rx="12" fill="#0f1815" stroke="#4fb99f" stroke-width="2"/>
+      <text class="t" x="730" y="267" text-anchor="middle">put</text>
+      <text class="f" x="730" y="289" text-anchor="middle">api.helper.ts</text>
+    </g>
+  </g>
+</svg>

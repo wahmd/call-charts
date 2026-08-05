@@ -3,6 +3,10 @@
 Hover any TypeScript/JavaScript function to see its call flow as a chart, right inside the tooltip.
 Expand into a full-size interactive graph with execution tracing and per-function details.
 
+<p align="center">
+  <img src="media/demo.svg" width="760" alt="Hovering a function shows its call chart: callers, callees, and the layers they live in">
+</p>
+
 ## Features
 
 **Hover chart** — hovering a function name renders a layered flow chart of everything it calls
