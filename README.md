@@ -10,6 +10,9 @@ Expand into a full-size interactive graph with execution tracing and per-functio
 ## Demo Video: 
 https://x.com/imwaleed_ahmad/status/2085135115001221261
 
+## Install 
+https://marketplace.visualstudio.com/items?itemName=waleed.call-charts
+
 ## Features
 
 **Hover chart** — hovering a function name renders a layered flow chart of everything it calls
